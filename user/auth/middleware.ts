@@ -1,31 +1,44 @@
-import { Strategy, ExtractJwt } from "passport-jwt"
+import { Strategy, ExtractJwt, StrategyOptions } from "passport-jwt"
 import passport from 'passport'
-import  crypto  from 'crypto'
-import  User  from "user/models";
-const secretKey = crypto.randomBytes(32).toString('hex');
+import  User, { IUserDocument }  from "../models.js";
+import UnAuthenticated from "../../custom-errors/unauthenticated.js";
 
+const secret: string | undefined = process.env.SECRET_KEY;
+const validSecret: string = secret ?? '';
 
-const opts = {
+const opts: StrategyOptions = {
     jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-    secretOrKey: secretKey,
+    secretOrKey: validSecret,
 }
 
-passport.use(new Strategy(opts, (jwt_payload, done) => {
-    User.findOne({ id: jwt_payload.sub },
-         (err: Error | undefined, user: typeof User) => {
-            if (err) {
-                return done(err, false)
-            } 
+passport.serializeUser((user, done) => {
+    done(null, (user as IUserDocument)._id);
+  })
 
-            if (user) {
-                return done(null, user)
-            } 
 
-            else {
+passport.deserializeUser(async (id, done) => {
+    try {
+        const user = await User.findById(id)
+        done(null, user);
+    } catch (err){
+        done(err)
+    }
+})
+
+export default passport.use(new Strategy(opts, async (jwt_payload, done) => {   
+        try {
+            if (!jwt_payload.id) {
+                return done(new UnAuthenticated('Invalid token: subject missing'), false)}
+            const user  = await User.findById(jwt_payload.id)
+
+            if (!user) {
                 return done(null, false)
-                // or you could create a new account
-
+            } 
+            else {
+                return done(null, user)
             }
-    })
-
+        } catch(err: any) {
+            return done(err, false)
+        }
 }))
+

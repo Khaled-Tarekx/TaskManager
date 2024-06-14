@@ -1,19 +1,24 @@
 import { genSalt, compare, hash } from "bcrypt";
-import { NextFunction } from "express";
+import { CustomError, UnAuthenticated } from "../custom-errors/main.js";
 
-import mongoose, { Schema, Document, model } from 'mongoose';
+import  { Schema, Document, model } from 'mongoose';
+import { StatusCodes } from "http-status-codes";
 
 const SALT_ROUNDS = Number(process.env.SALT_ROUNDS);
 
 const regexString = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-interface IUser extends Document {
+export interface IUser extends Document {
   username: string;
   isLoggedIn: boolean;
   roles: string;
   email: string;
   password: string;
   position: string;
+}
+
+export interface IUserDocument extends IUser, Document {
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
 const userSchema: Schema = new Schema({
@@ -23,51 +28,63 @@ const userSchema: Schema = new Schema({
   email: {
     type: String,
     required: true,
-    validate: {
-      validator: (v: string) => regexString.test(v),
-      message: 'Email: {VALUE} isn\'t a valid email',
-    },
+    match: [regexString, 'Email: {VALUE} isn\'t a valid email'],
     index: { unique: true },
   },
   password: {
     type: String,
     required: true,
     minlength: [6, 'Must be at least 6, got {VALUE}'],
-    maxlength: 16,
+    maxlength: 255,
   },
   position: {
     type: String,
     enum: {
       values: ['Front-End', 'Back-End'],
       message: '{VALUE} is not supported',
-    },
-  },
+    }
+  }
+},
+{ timestamps: true, strict: true });
+
+
+userSchema.pre<IUserDocument>('save', async function (next) {
+  try {
+
+    if (!this.isModified('password')) return next();
+    const salt = await genSalt(SALT_ROUNDS);
+    this.password = await hash(this.password, salt);
+    next();
+
+  } catch (err: any) {
+    next(err);
+  }
 });
 
+  userSchema.pre<IUserDocument>('save', async function (next) {
+    try {
+      const existingUser = await User.findOne({email: this.email});
+      if (existingUser) {
+         next(new CustomError("this email already exists", StatusCodes.BAD_REQUEST)) 
+        }
+      next()
+    } catch (err: any) {
+      next(err)
+  }
+})
+  
 
-userSchema.pre<IUser>('save', async function (next) {  // only hash the password if it has been modified (or is new)
-  if (!this.isModified("password")) return next();
+  userSchema.methods.comparePassword = async function (
+    candidatePassword: string,
+  ) {
+    try {
+      return await compare(candidatePassword, this.password)
+    } catch(err: any){
+      throw new UnAuthenticated( `err checking password: ${err.message}`)
+    }
+  }
 
-  genSalt(SALT_ROUNDS), (err: Error| undefined, salt: number) => {
-    if (err) return next(err);
-    hash(this.password, salt), (err: Error | undefined, hash: string) => {
-      if (err) return next(err);
-      this.password = hash;
-      next();
-    }};
-  })
 
-  userSchema.methods.comparePassword = function (
-    this: IUser, 
-    candidatePassword: string, 
-    cb: (err: Error | null, isMatch?: boolean) => void
-  ): void {
-    compare(candidatePassword, this.password, (err, isMatch) => {
-      if (err) return cb(err);
-      cb(null, isMatch);
-    });
-  };
-
-const User = model<IUser>('User', userSchema);
+const User = model<IUserDocument>('User', userSchema);
 export default User 
 

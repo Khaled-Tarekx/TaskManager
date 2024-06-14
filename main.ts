@@ -1,52 +1,41 @@
-import { config } from "dotenv";
-config();
-import  express from "express"
-import mongoose from "mongoose";
-import { MongoClient, ServerApiVersion } from "mongodb";
+import 'dotenv/config';
+import express from "express";
+import  session  from 'express-session';
+
 import ErrorHandler from "./errors/middleware.js";
 import UserRouter from "./user/routes.js";
+import AuthRouter from "./user/auth/routes.js"
+import TaskRouter from "./task/routes.js";
+import passport from './user/auth/middleware.js';
 
+import CommentRouter from "./comment/routes.js";
+import connectWithRetry from "./database/connection.js";
+
+
+const secret: string | undefined = process.env.SECRET_KEY;
+const validSecret: string = secret ?? '';
 
 const app = express();
-
-const uri: string | undefined = process.env.URI;
-const validUri: string = uri ?? '';
-
-const connectWithRetry = () => {
-    console.log('MongoDB connection with retry');
-    mongoose.connect(validUri, {
-        serverSelectionTimeoutMS: 30000, // 30 seconds
-        connectTimeoutMS: 30000 // 30 seconds
-    }).then(() => {
-        console.log('MongoDB is connected');
-    }).catch(err => {
-        console.error('MongoDB connection unsuccessful, retry after 5 seconds.', err);
-        setTimeout(connectWithRetry, 5000);
-    });
-};
-
-connectWithRetry();
-
-mongoose.connection.on('connected', () => {
-    console.log('Mongoose connected to DB Cluster');
-});
-
-mongoose.connection.on('error', (error) => {
-    console.error('Mongoose connection error:', error);
-});
-
-mongoose.connection.on('disconnected', () => {
-    console.log('Mongoose disconnected');
-});
-
-
-connectWithRetry()
-mongoose.set('debug', true);
-
 app.use(express.json());
-app.use('/users', UserRouter)
+
+app.use(session({
+    secret: validSecret,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }
+  }))
+
+app.use(passport.initialize());
+app.use(passport.session())
+
+const authentication =  passport.authenticate('jwt')
+app.use('/', AuthRouter)
+app.use('/users', authentication, UserRouter)
+app.use('/tasks', authentication, TaskRouter)
+app.use('/comments', authentication, CommentRouter)
 app.use(ErrorHandler);
 
+connectWithRetry()
 
 app.listen(process.env.PORT, () => {
     console.log(`app is listening on port ${process.env.PORT}`);

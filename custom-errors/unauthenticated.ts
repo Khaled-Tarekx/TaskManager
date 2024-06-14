@@ -3,10 +3,9 @@ import CustomError from "./custom-error.js";
 
 
 class UnAuthenticated extends CustomError {
-  statusCodes: number
   constructor(message: string) {
-    super(message);
-    this.statusCodes = StatusCodes.UNAUTHORIZED;
+    super(message, StatusCodes.UNAUTHORIZED);
+   
   }
 }
 

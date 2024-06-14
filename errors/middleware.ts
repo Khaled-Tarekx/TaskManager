@@ -1,9 +1,10 @@
-import {StatusCodes} from "http-status-codes";
+import { CustomError } from "../custom-errors/main.js";
 import { Request, Response, NextFunction } from "express";
 
-const ErrorHandler = (err: Error , req: Request , res: Response, next: NextFunction) => {
-  res.status(StatusCodes.INTERNAL_SERVER_ERROR);
-  res.json({ error: err.message });
+const ErrorHandler = (err: CustomError , req: Request , res: Response, next: NextFunction) => {
+  const statusCode = err.statusCode || 500
+  res.status(statusCode)
+  .json({ error: err.message });
   next()
 };
 
