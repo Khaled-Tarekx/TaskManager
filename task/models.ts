@@ -1,5 +1,5 @@
 import mongoose, { Schema, model, Document } from 'mongoose';
-
+import { notifyUserOfUpcomingDeadline } from './utilities.js';
 
 export interface TaskInterface extends Document {
     priority: number,
@@ -23,6 +23,7 @@ const TaskSchema: Schema = new Schema(
     },
     { timestamps: true}
 )
+
 
 
 const Task = model<TaskInterface>('Task', TaskSchema)
