@@ -1,5 +1,5 @@
 import { genSalt, compare, hash } from "bcrypt";
-import { CustomError, UnAuthenticated } from "../custom-errors/main.js";
+import { CustomError, UnAuthenticated } from "../../custom-errors/main.js";
 
 import  { Schema, Document, model } from 'mongoose';
 import { StatusCodes } from "http-status-codes";

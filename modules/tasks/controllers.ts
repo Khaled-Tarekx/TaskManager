@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import Task, { TaskInterface } from "./models.js";
-import { IUserDocument } from "../user/models.js";
+import { IUserDocument } from "../users/models.js";
 import { StatusCodes } from "http-status-codes";
-import { NotFound, BadRequest } from "../custom-errors/main.js";
+import { NotFound, BadRequest } from "../../custom-errors/main.js";
 import { notifyUserOfUpcomingDeadline } from "./utilities.js";
 import mongoose from "mongoose";
 

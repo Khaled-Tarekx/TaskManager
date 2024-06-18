@@ -1,4 +1,4 @@
-import { NotFound, BadRequest, CustomError} from "../custom-errors/main.js";
+import { NotFound, BadRequest, CustomError} from "../../custom-errors/main.js";
 import  User  from "./models.js";
 import { NextFunction, Request, Response } from "express"
 import { StatusCodes } from "http-status-codes";

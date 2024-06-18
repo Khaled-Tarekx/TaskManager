@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
-import { createTokenUser } from "../auth/utills.js";
-import  User, { IUserDocument }  from "../models.js";
+import { createTokenUser } from "./utillities.js";
+import  User, { IUserDocument }  from "../modules/users/models.js";
 import { StatusCodes } from 'http-status-codes';
-import { UnAuthenticated, NotFound, BadRequest } from "../../custom-errors/main.js";
+import { UnAuthenticated, NotFound, BadRequest } from "../custom-errors/main.js";
 
 
 

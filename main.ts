@@ -3,12 +3,13 @@ import express from "express";
 import  session  from 'express-session';
 
 import ErrorHandler from "./errors/middleware.js";
-import UserRouter from "./user/routes.js";
-import AuthRouter from "./user/auth/routes.js"
-import TaskRouter from "./task/routes.js";
-import passport from './user/auth/middleware.js';
-
-import CommentRouter from "./comment/routes.js";
+import UserRouter from "./modules/users/routes.js";
+import AuthRouter from "./auth/routes.js"
+import TaskRouter from "./modules/tasks/routes.js";
+import CommentRouter from "./modules/comments/routes.js";
+import ReplyRouter from "./modules/replies/routes.js";
+import LikeRouter from "./modules/likes/routes.js";
+import passport from './auth/middleware.js';
 import connectWithRetry from "./database/connection.js";
 
 
@@ -33,6 +34,8 @@ app.use('/', AuthRouter)
 app.use('/users', authentication, UserRouter)
 app.use('/tasks', authentication, TaskRouter)
 app.use('/comments', authentication, CommentRouter)
+app.use('/replies', authentication, ReplyRouter)
+app.use('/likes', authentication, LikeRouter)
 app.use(ErrorHandler);
 
 connectWithRetry()
