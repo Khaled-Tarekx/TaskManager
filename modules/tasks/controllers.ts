@@ -89,9 +89,13 @@ export const createTask = async (
 
     if (owner) {
       task.status = "inProgress";
-      task.save();
-      await notifyUserOfUpcomingDeadline(task);
-      return res.status(StatusCodes.CREATED).json({ data: task });
+      await task.save();
+      try {
+        await notifyUserOfUpcomingDeadline(task);
+      } catch (err: any) {
+        next(new BadRequest(`Error notifying user of upcoming deadline: ${err.message}`))
+      }
+      
     }
     res.status(StatusCodes.CREATED).json({ data: task });
   } catch (err: any) {
