@@ -20,6 +20,19 @@ export const getTasks = async (
   }
 };
 
+export const getTasksPage = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const tasks = await Task.find();
+    res.render('front_end/index', { tasks: tasks });
+  } catch (err: any) {
+    next(new BadRequest(err.message));
+  }
+};
+
 export const getUserTasks = async (
   req: Request,
   res: Response,

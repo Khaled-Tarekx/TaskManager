@@ -1,6 +1,6 @@
-import User, { IUserDocument } from '../modules/users/models.js'
+import User, { IUserDocument } from '../users/models.js'
 import jwt from 'jsonwebtoken'
-import { CustomError, NotFound } from '../custom-errors/main.js';
+import { CustomError, NotFound } from '../../custom-errors/main.js';
 import { StatusCodes } from 'http-status-codes';
 
 const secret: string | undefined = process.env.SECRET_KEY;

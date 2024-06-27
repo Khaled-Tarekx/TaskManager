@@ -1,7 +1,7 @@
 import { Strategy, ExtractJwt, StrategyOptions } from "passport-jwt"
 import passport from 'passport'
-import  User, { IUserDocument }  from "../modules/users/models.js";
-import UnAuthenticated from "../custom-errors/unauthenticated.js";
+import  User, { IUserDocument }  from "../users/models.js";
+import UnAuthenticated from "../../custom-errors/unauthenticated.js";
 
 const secret: string | undefined = process.env.SECRET_KEY;
 const validSecret: string = secret ?? '';

@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
 import { createTokenUser } from "./utillities.js";
-import  User, { IUserDocument }  from "../modules/users/models.js";
+import  User, { IUserDocument }  from "../users/models.js";
 import { StatusCodes } from 'http-status-codes';
-import { UnAuthenticated, NotFound, BadRequest } from "../custom-errors/main.js";
+import { UnAuthenticated, NotFound, BadRequest } from "../../custom-errors/main.js";
 
 
 
@@ -17,7 +17,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     } 
 };
   
-  export const login = async (req: Request, res: Response, next: NextFunction) => {
+export const login = async (req: Request, res: Response, next: NextFunction) => {
     // potato trial code
     const { email, password } = req.body
   
@@ -38,4 +38,3 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     next(new BadRequest(err.message))
     }
 };
-  
