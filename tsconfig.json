@@ -1,0 +1,66 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "ESNext"
+    ],
+    "typeRoots": [
+      "./src/types",
+      "./node_modules/@types"
+    ],
+    // "types": ["vitest/globals"],
+    "outDir": "./dist",
+    "allowJs": false,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": false,
+    "esModuleInterop": true,
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+//      "@auth/*": [
+//        "./src/features/auth/*"
+//      ],
+//      "@db/*": [
+//        "./src/db/*"
+//      ],
+//      "@db/": [
+//        "./src/db/db.ts"
+//      ],
+//      "@events/*": [
+//        "./src/features/events/*"
+//      ],
+//      "@common/*": [
+//        "./src/common/*"
+//      ],
+//      "@env/": [
+//        "./src/common/env.ts"
+//      ]
+    },
+    "skipLibCheck": true
+  },
+  "include": [
+    "./src/*.ts",
+    "./src/**/*",
+    "./src/types/global.d.ts",
+    ".eslintrc.cjs",
+    ".",
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node",
+    "require": ["tsconfig-paths/register"], // TODO for some reason, this is not working
+    "files": true,
+  }
+}

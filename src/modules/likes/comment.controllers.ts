@@ -1,23 +1,23 @@
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { NotFound, BadRequest } from "../../custom-errors/main.js";
-import Like from "./models.js";
+import { NotFound, BadRequest, UnAuthenticated } from "../../../custom-errors/main.js";
+import { CommentLike, CommentLikeInterface } from "./models.js";
 import mongoose from "mongoose";
 import { IUserDocument } from "../users/models.js";
 
-export const getLikes = async (
+export const getCommentLikes = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const Likes = await Like.find();
-    res.status(StatusCodes.OK).json({ data: Likes, count: Likes.length });
+    const commentLikes = await CommentLike.find();
+    res.status(StatusCodes.OK).json({ data: commentLikes, count: commentLikes.length });
   } catch (err: any) {
     next(new BadRequest(err.message));
   }
 };
-export const getLike = async (
+export const getCommentLike = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -27,35 +27,35 @@ export const getLike = async (
     if (!mongoose.Types.ObjectId.isValid(id)) {
       next(new BadRequest("Invalid ID format"));
     }
-    const like = await Like.findById(id);
-    if (!like) {
-      next(new NotFound("no like found with the given id"));
+    const commentLike = await CommentLike.findById(id);
+    if (!commentLike) {
+      next(new NotFound("no like found with the given id for this comment"));
     }
-    res.status(StatusCodes.OK).json({ data: like });
+    res.status(StatusCodes.OK).json({ data: commentLike });
   } catch (err: any) {
     next(new BadRequest(err.message));
   }
 };
 
-export const getUserLikes = async (
+export const getUserCommentLikes = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const user = req.user;
-    const userLikes = await Like.find({
+    const userCommentLikes = await CommentLike.find({
       owner: (user as IUserDocument).id,
     });
     res
       .status(StatusCodes.OK)
-      .json({ data: userLikes, count: userLikes.length });
+      .json({ data: userCommentLikes, count: userCommentLikes.length });
   } catch (err: any) {
     next(new BadRequest(err.message));
   }
 };
 
-export const getUserLike = async (
+export const getUserCommentLike = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -66,33 +66,34 @@ export const getUserLike = async (
     if (!mongoose.Types.ObjectId.isValid(id)) {
       next(new BadRequest("Invalid ID format"));
     }
-    const like = await Like.findOne({
+    const userCommentLike = await CommentLike.findOne({
       _id: id,
       owner: (user as IUserDocument).id,
     });
-    if (!like) {
+    if (!userCommentLike) {
       next(new NotFound("no like found with the given id"));
     }
-    res.status(StatusCodes.OK).json({ data: like });
+    res.status(StatusCodes.OK).json({ data: userCommentLike });
   } catch (err: any) {
     next(new BadRequest(err.message));
   }
 };
 
-export const createLike = async (
+export const createCommentLike = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const like = Like.create({ ...req.body });
-    res.status(StatusCodes.CREATED).json({ data: like });
+    const commentLike = CommentLike.create({ ...req.body });
+    res.status(StatusCodes.CREATED).json({ data: commentLike });
   } catch (err: any) {
     next(new BadRequest(err.message));
   }
 };
 
-export const deleteLike = async (
+
+export const deleteCommentLike = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -102,14 +103,21 @@ export const deleteLike = async (
     if (!mongoose.Types.ObjectId.isValid(id)) {
       next(new BadRequest("Invalid ID format"));
     }
-    const likeToDelete = await Like.findByIdAndDelete(id);
-    if (!likeToDelete) {
+    const commentLikeToDelete = await CommentLike.findByIdAndDelete(id) as CommentLikeInterface;
+    if (req.user !== commentLikeToDelete.owner) {
+      next(new UnAuthenticated("you only have permission to delete your like"));
+
+    }
+
+    if (!commentLikeToDelete) {
       next(new NotFound("no like found"));
     }
     res
       .status(StatusCodes.OK)
-      .json({ msg: "like deleted successfully", data: likeToDelete });
+      .json({ msg: "like deleted successfully", data: commentLikeToDelete });
   } catch (err: any) {
     next(new BadRequest(err.message));
   }
 };
+
+

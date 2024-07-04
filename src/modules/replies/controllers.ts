@@ -1,26 +1,23 @@
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import {
-  NotFound,
-  BadRequest,
-} from "../../custom-errors/main.js";
-import Comment, { CommentInterface } from "./models.js";
+import { NotFound, BadRequest } from "../../../custom-errors/main.js";
+import Reply, { ReplyInterface } from "./models.js";
 import mongoose from "mongoose";
-import { IUserDocument } from "modules/users/models.js";
+import { IUserDocument } from "../users/models.js";
 
-export const getComments = async (
+export const getReplies = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const comments = await Comment.find();
-    res.status(StatusCodes.OK).json({ data: comments, count: comments.length });
+    const replies = await Reply.find();
+    res.status(StatusCodes.OK).json({ data: replies, count: replies.length });
   } catch (err: any) {
     next(new BadRequest(err.message));
   }
 };
-export const getComment = async (
+export const getReply = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -30,35 +27,35 @@ export const getComment = async (
     if (!mongoose.Types.ObjectId.isValid(id)) {
       next(new BadRequest("Invalid ID format"));
     }
-    const comment = await Comment.findById(id);
-    if (!comment) {
-      next(new NotFound("no comment found with the given id"));
+    const reply = await Reply.findById(id);
+    if (!reply) {
+      next(new NotFound("no reply found with the given id"));
     }
-    res.status(StatusCodes.OK).json({ data: comment });
+    res.status(StatusCodes.OK).json({ data: reply });
   } catch (err: any) {
     next(new BadRequest(err.message));
   }
 };
 
-export const getUserComments = async (
+export const getUserReplies = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const user = req.user;
-    const userComments = await Comment.find({
+    const userReplies = await Reply.find({
       owner: (user as IUserDocument).id,
     });
     res
       .status(StatusCodes.OK)
-      .json({ data: userComments, count: userComments.length });
+      .json({ data: userReplies, count: userReplies.length });
   } catch (err: any) {
     next(new BadRequest(err.message));
   }
 };
 
-export const getUserComment = async (
+export const getUserReply = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -69,33 +66,33 @@ export const getUserComment = async (
     if (!mongoose.Types.ObjectId.isValid(id)) {
       next(new BadRequest("Invalid ID format"));
     }
-    const comment = await Comment.findOne({
+    const reply = await Reply.findOne({
       _id: id,
       owner: (user as IUserDocument).id,
     });
-    if (!comment) {
-      next(new NotFound("no comment found with the given id"));
+    if (!reply) {
+      next(new NotFound("no reply found with the given id"));
     }
-    res.status(StatusCodes.OK).json({ data: comment });
+    res.status(StatusCodes.OK).json({ data: reply });
   } catch (err: any) {
     next(new BadRequest(err.message));
   }
 };
 
-export const createComment = async (
+export const createReply = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const comment = Comment.create({ ...req.body });
-    res.status(StatusCodes.CREATED).json({ data: comment });
+    const reply = Reply.create({ ...req.body });
+    res.status(StatusCodes.CREATED).json({ data: reply });
   } catch (err: any) {
     next(new BadRequest(err.message));
   }
 };
 
-export const editComment = async (
+export const editReply = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -105,22 +102,22 @@ export const editComment = async (
     if (!mongoose.Types.ObjectId.isValid(id)) {
       next(new BadRequest("Invalid ID format"));
     }
-    const commentToUpdate = (await Comment.findByIdAndUpdate(
+    const replyToUpdate = (await Reply.findByIdAndUpdate(
       id,
       { ...req.body, owner: (req.user as IUserDocument).id },
       { new: true, runValidators: true }
-    )) as CommentInterface;
-    if (!commentToUpdate) {
-      next(new NotFound("no comment found"));
+    )) as ReplyInterface;
+    if (!replyToUpdate) {
+      next(new NotFound("no reply found"));
     }
     res
       .status(StatusCodes.OK)
-      .json({ msg: "comment updated successfully", data: commentToUpdate });
+      .json({ msg: "reply updated successfully", data: replyToUpdate });
   } catch (err: any) {
     next(new BadRequest(err.message));
   }
 };
-export const deleteComment = async (
+export const deleteReply = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -130,13 +127,13 @@ export const deleteComment = async (
     if (!mongoose.Types.ObjectId.isValid(id)) {
       next(new BadRequest("Invalid ID format"));
     }
-    const commentToDelete = await Comment.findByIdAndDelete(id);
-    if (!commentToDelete) {
-      next(new NotFound("no comment found"));
+    const replyToDelete = await Reply.findByIdAndDelete(id);
+    if (!replyToDelete) {
+      next(new NotFound("no reply found"));
     }
     res
       .status(StatusCodes.OK)
-      .json({ msg: "comment deleted successfully", data: commentToDelete });
+      .json({ msg: "reply deleted successfully", data: replyToDelete });
   } catch (err: any) {
     next(new BadRequest(err.message));
   }

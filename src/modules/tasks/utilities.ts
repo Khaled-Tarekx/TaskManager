@@ -1,7 +1,7 @@
 import User from "../users/models.js";
 import moment from "moment";
 import { TaskInterface } from "./models.js";
-import { BadRequest, NotFound } from "../../custom-errors/main.js";
+import { BadRequest, NotFound } from "../../../custom-errors/main.js";
 import emailQueue from "./queue.js";
 
 
