@@ -8,11 +8,14 @@ import TaskRouter from "./src/modules/tasks/routes.js";
 import CommentRouter from "./src/modules/comments/routes.js";
 import ReplyRouter from "./src/modules/replies/routes.js";
 import LikeRouter from "./src/modules/likes/routes.js";
+import WorkSpaceRouter from "./src/modules/work_spaces/routes.js";
+import MembersRouter from "./src/modules/work_space_members/routes.js";
+
 import passport from './src/modules/auth/middleware.js';
 import connectWithRetry from "./database/connection.js";
-import cors from "cors"
-import Redis from "redis"
-import { getTasksPage } from "./src/modules/tasks/controllers.js"
+import cors from "cors";
+import Redis from "redis";
+import { getTasksPage } from "./src/modules/tasks/controllers.js";
 const secret: string | undefined = process.env.SECRET_KEY;
 const validSecret: string = secret ?? '';
 
@@ -40,17 +43,19 @@ const authentication =  passport.authenticate('jwt')
 app.use('/uploads', express.static('uploads'))
 app.use('/', AuthRouter)
 app.use('/api/users', authentication, UserRouter)
+app.use('/api/workSpaces', authentication, WorkSpaceRouter)
+app.use('/api/workSpaces', authentication, MembersRouter)
 app.use('/api/tasks',  authentication, TaskRouter)
 app.use('/api/comments', authentication, CommentRouter)
 app.use('/api/replies', authentication, ReplyRouter)
 app.use('/api/likes', authentication, LikeRouter)
 app.use(ErrorHandler);
 
-connectWithRetry()
+connectWithRetry().then( () => {
+    console.log('reached main file')
+})
 
 
 app.listen(process.env.PORT, () => {
     console.log(`app is listening on port ${process.env.PORT}`);
 });
-
-

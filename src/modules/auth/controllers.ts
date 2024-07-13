@@ -24,7 +24,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     try {
       const user = await User.findOne({ email: email });
         if (!user) next(new NotFound(`no user found with the
-          given email`))
+          given email or password`))
   
           const isCorrect = await user?.comparePassword(password);
           if (!isCorrect) {
