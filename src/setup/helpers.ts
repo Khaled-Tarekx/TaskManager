@@ -1,4 +1,4 @@
-import { client,  } from "../../main.js";
+import { client } from "../../main.js";
 import mongoose from "mongoose";
 
 const DEFAULT_EXPIRATION = 3600 // 24 hours

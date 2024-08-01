@@ -25,24 +25,24 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-//      "@auth/*": [
-//        "./src/features/auth/*"
-//      ],
-//      "@db/*": [
-//        "./src/db/*"
-//      ],
-//      "@db/": [
-//        "./src/db/db.ts"
-//      ],
-//      "@events/*": [
-//        "./src/features/events/*"
-//      ],
-//      "@common/*": [
-//        "./src/common/*"
-//      ],
-//      "@env/": [
-//        "./src/common/env.ts"
-//      ]
+      //      "@auth/*": [
+      //        "./src/features/auth/*"
+      //      ],
+      //      "@db/*": [
+      //        "./src/db/*"
+      //      ],
+      //      "@db/": [
+      //        "./src/db/db.ts"
+      //      ],
+      //      "@events/*": [
+      //        "./src/features/events/*"
+      //      ],
+      //      "@common/*": [
+      //        "./src/common/*"
+      //      ],
+      //      "@env/": [
+      //        "./src/common/env.ts"
+      //      ]
     },
     "skipLibCheck": true
   },
@@ -51,7 +51,7 @@
     "./src/**/*",
     "./src/types/global.d.ts",
     ".eslintrc.cjs",
-    ".",
+    "."
   ],
   "exclude": [
     "node_modules",
@@ -60,7 +60,10 @@
   "ts-node": {
     "esm": true,
     "experimentalSpecifierResolution": "node",
-    "require": ["tsconfig-paths/register"], // TODO for some reason, this is not working
-    "files": true,
+    "require": [
+      "tsconfig-paths/register"
+    ],
+    // TODO for some reason, this is not working
+    "files": true
   }
 }

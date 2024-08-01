@@ -24,7 +24,11 @@ export interface IUserDocument extends IUser, Document {
 const userSchema: Schema = new Schema({
   username: { type: String, required: true },
   isLoggedIn: { type: Boolean, default: false },
-  roles: { type: String, default: "user" },
+  roles: { type: String, default: "user",
+   enum: {
+      values: ['user', 'admin'],
+      message: '{VALUE} is not supported',
+    }},
   email: {
     type: String,
     required: true,
@@ -34,7 +38,7 @@ const userSchema: Schema = new Schema({
   password: {
     type: String,
     required: true,
-    minlength: [6, 'Must be at least 6, got {VALUE}'],
+    minlength: [6, 'Must be at least 6'],
     maxlength: 255,
   },
   position: {
@@ -46,7 +50,6 @@ const userSchema: Schema = new Schema({
   }
 },
 { timestamps: true, strict: true });
-
 
 userSchema.pre<IUserDocument>('save', async function (next) {
   try {

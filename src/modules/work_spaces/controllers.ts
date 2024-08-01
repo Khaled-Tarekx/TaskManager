@@ -1,86 +1,67 @@
-import { NotFound, BadRequest} from "../../../custom-errors/main.js";
+import {BadRequest, NotFound} from "../../../custom-errors/main.js";
 import WorkSpace from "./models.js";
-import WorkSpaceMembers, { Role } from "../work_space_members/models.js";
+import WorkSpaceMembers, {Role} from "../work_space_members/models.js";
 
-import { NextFunction, Request, Response } from "express"
-import { StatusCodes } from "http-status-codes";
+import {NextFunction, Request, Response} from "express"
+import {StatusCodes} from "http-status-codes";
 import mongoose from "mongoose";
 import {IUserDocument} from "../users/models";
+import {asyncHandler} from "../auth/middleware.js";
 
-export const  getWorkSpaces = async (req: Request, res: Response, next: NextFunction) => {
-  try {
+export const getWorkSpaces = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const workSpaces = await WorkSpace.find()
-    res.status(StatusCodes.OK).json({ data: workSpaces, count: workSpaces.length })
-  } catch (err: any) {
-    next(new BadRequest(err.message))
-  }
-}
+    res.status(StatusCodes.OK).json({data: workSpaces, count: workSpaces.length})
+});
 
 
-export const  createWorkSpace = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { name, type } = req.body
+export const createWorkSpace = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const {name, type} = req.body
     const user = req.user
-    const workSpace = await WorkSpace.create({ name, type })
-      const owner = await WorkSpaceMembers.create({
-      role: Role.Owner,
-      user: (user as IUserDocument).id,
-      workspace: workSpace.id,
+    const workSpace = await WorkSpace.create({name, type})
+    const owner = await WorkSpaceMembers.create({
+        role: Role.Owner,
+        user: (user as IUserDocument).id,
+        workspace: workSpace.id,
     });
-    res.status(StatusCodes.OK).json({ message: `created your work space ${ name } successfully `, data: { workSpace, owner } })
-  } catch (err: any) {
-    next(new BadRequest(err.message))
-  }
-}
-export const getWorkSpace = async (req: Request, res: Response, next: NextFunction) => {
-  const { id } = req.params
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    next(new BadRequest('Invalid ID format'))
+    res.status(StatusCodes.OK).json({
+        message: `created your work space ${name} successfully `,
+        data: {workSpace, owner}
+    })
+});
+
+export const getWorkSpace = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const {id} = req.params
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return next(new BadRequest('Invalid ID format'))
     }
-  try {
     const workSpace = await WorkSpace.findById(id);
-    if (!workSpace) next(new NotFound(`no workSpace found`))
-    
-    res.status(StatusCodes.OK).json({ data: workSpace })
-  } catch (err: any){
-    next(new BadRequest(err.message))
-  }
-};
+    if (!workSpace) return next(new NotFound(`no workSpace found`))
 
-export const updateWorkSpace = async (req: Request, res: Response, next: NextFunction) => {
-  // potato trial code
-  const { id } = req.params
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    next(new BadRequest('Invalid ID format'))
-  }
-  const { name } = req.body
-  try { 
-    const updatedWorkSpace = await WorkSpace.findByIdAndUpdate(id, { name },
-        { new: true, runValidators: true , context: 'query'});
-    if (!updatedWorkSpace) next(new NotFound(`no WorkSpace found with the given id`))
-    res.status(StatusCodes.OK).json({ message: 'Work Space updated Successfully', data: updatedWorkSpace })
+    res.status(StatusCodes.OK).json({data: workSpace})
+});
 
-  } catch (err: any){
-    next(new BadRequest(`Error updating Work Space: ${err.message}`))
-  }
-};
+export const updateWorkSpace = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const {id} = req.params
+    const {name} = req.body
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return next(new BadRequest('Invalid ID format'))
+    }
 
+    const updatedWorkSpace = await WorkSpace.findByIdAndUpdate(id, {name},
+        {new: true, runValidators: true, context: 'query'});
+    if (!updatedWorkSpace) return next(new NotFound(`no WorkSpace found with the given id`))
+    res.status(StatusCodes.OK).json({message: 'Work Space updated Successfully', data: updatedWorkSpace})
+});
 
-
-export const deleteWorkSpace = async (req: Request, res: Response, next: NextFunction) => {
-  // potato trial code
-  const { id } = req.params
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    next(new BadRequest('Invalid ID format'))
-  }
-
-  try {
+export const deleteWorkSpace = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const {id} = req.params
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return next(new BadRequest('Invalid ID format'))
+    }
     const workSpaceToDelete = await WorkSpace.findByIdAndDelete(id);
-    if (!workSpaceToDelete) next(new NotFound(`no workSpace found`))
-      res.status(StatusCodes.OK).json({ message: 'Work Space Deleted Successfully'
-    , data: workSpaceToDelete })
-
-  } catch (err: any) {
-    next(new BadRequest(`Error deleting Work Space: ${err.message}`))
-}}
-
+    if (!workSpaceToDelete) return next(new NotFound(`no workSpace found`))
+    res.status(StatusCodes.OK).json({
+        message: 'Work Space Deleted Successfully'
+        , data: workSpaceToDelete
+    })
+});

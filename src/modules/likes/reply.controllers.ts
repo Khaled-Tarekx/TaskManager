@@ -1,124 +1,74 @@
-import { NextFunction, Request, Response } from "express";
-import { StatusCodes } from "http-status-codes";
-import { NotFound, BadRequest, UnAuthenticated } from "../../../custom-errors/main.js";
-import { ReplyLikeInterface, ReplyLike } from "./models.js";
+import {NextFunction, Request, Response} from "express";
+import {StatusCodes} from "http-status-codes";
+import {BadRequest, NotFound, UnAuthenticated} from "../../../custom-errors/main.js";
+import {ReplyLike, ReplyLikeInterface} from "./models.js";
 import mongoose from "mongoose";
-import { IUserDocument } from "../users/models.js";
+import {IUserDocument} from "../users/models.js";
+import {asyncHandler} from "../auth/middleware.js";
 
-export const getReplyLikes = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
+export const getReplyLikes = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const replyLikes = await ReplyLike.find();
-    res.status(StatusCodes.OK).json({ data: replyLikes, count: replyLikes.length });
-  } catch (err: any) {
-    next(new BadRequest(err.message));
-  }
-};
+    res.status(StatusCodes.OK).json({data: replyLikes, count: replyLikes.length});
+});
 
-export const getReplyLike = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { id } = req.params;
+export const getReplyLike = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const {id} = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      next(new BadRequest("Invalid ID format"));
+        return next(new BadRequest("Invalid ID format"));
     }
     const replyLike = await ReplyLike.findById(id);
     if (!replyLike) {
-      next(new NotFound("no like found with the given id for this reply"));
+        return next(new NotFound("no like found with the given id for this reply"));
     }
-    res.status(StatusCodes.OK).json({ data: replyLike });
-  } catch (err: any) {
-    next(new BadRequest(err.message));
-  }
-};
+    res.status(StatusCodes.OK).json({data: replyLike});
 
-export const getUserReplyLikes = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const user = req.user;
-    const userReplyLikes = await ReplyLike.find({
-      owner: (user as IUserDocument).id,
-    });
-    res
-      .status(StatusCodes.OK)
-      .json({ data: userReplyLikes, count: userReplyLikes.length });
-  } catch (err: any) {
-    next(new BadRequest(err.message));
-  }
-};
+});
 
-export const getUserReplyLike = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { id } = req.params;
-    const user = req.user;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      next(new BadRequest("Invalid ID format"));
-    }
-    const userReplyLike = await ReplyLike.findOne({
-      _id: id,
-      owner: (user as IUserDocument).id,
-    });
-    if (!userReplyLike) {
-      next(new NotFound("no like found with the given id"));
-    }
-    res.status(StatusCodes.OK).json({ data: userReplyLike });
-  } catch (err: any) {
-    next(new BadRequest(err.message));
-  }
-};
+export const getUserReplyLikes = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        const user = req.user;
+        const userReplyLikes = await ReplyLike.find({
+            owner: (user as IUserDocument).id,
+        });
+        res.status(StatusCodes.OK).json({data: userReplyLikes, count: userReplyLikes.length});
+});
 
-export const createReplyLike = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const replyLike = ReplyLike.create({ ...req.body });
-    res.status(StatusCodes.CREATED).json({ data: replyLike });
-  } catch (err: any) {
-    next(new BadRequest(err.message));
-  }
-};
+export const getUserReplyLike = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        const {id} = req.params;
+        const user = req.user;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return next(new BadRequest("Invalid ID format"));
+        }
+        const userReplyLike = await ReplyLike.findOne({
+            _id: id,
+            owner: (user as IUserDocument).id,
+        });
+        if (!userReplyLike) {
+            return next(new NotFound("no like found with the given id"));
+        }
+        res.status(StatusCodes.OK).json({data: userReplyLike});
+});
+
+export const createReplyLike = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const replyLike = ReplyLike.create({...req.body});
+    res.status(StatusCodes.CREATED).json({data: replyLike});
+});
 
 
-export const deleteReplyLike = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      next(new BadRequest("Invalid ID format"));
-    }
-    const replyLikeToDelete = await ReplyLike.findByIdAndDelete(id) as ReplyLikeInterface;
-    if (req.user !== replyLikeToDelete.owner) {
-      next(new UnAuthenticated("you only have permission to delete your like"));
+export const deleteReplyLike = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        const {id} = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return next(new BadRequest("Invalid ID format"));
+        }
+        const replyLikeToDelete = await ReplyLike.findByIdAndDelete(id) as ReplyLikeInterface;
+        if (req.user !== replyLikeToDelete.owner) {
+            return next(new UnAuthenticated("you only have permission to delete your like"));
 
-    }
+        }
 
-    if (!replyLikeToDelete) {
-      next(new NotFound("no like found"));
-    }
-    res
-      .status(StatusCodes.OK)
-      .json({ msg: "like deleted successfully", data: replyLikeToDelete });
-  } catch (err: any) {
-    next(new BadRequest(err.message));
-  }
-};
+        if (!replyLikeToDelete) {
+           return next(new NotFound("no like found"));
+        }
+        res.status(StatusCodes.OK).json({msg: "like deleted successfully", data: replyLikeToDelete});
+});
 
 
