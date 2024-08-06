@@ -1,0 +1,19 @@
+version: "3"
+services:
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: khaledtarek
+      MONGO_INITDB_ROOT_PASSWORD: 0124578369x
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: khaledtarek
+      ME_CONFIG_MONGODB_ADMINPASSWORD: 0124578369x
+      ME_CONFIG_MONGODB_URL: mongodb+srv://khaledtarek:0124578369x@khaledtarek6109.xoqykzn.mongodb.net/
+      ME_CONFIG_BASICAUTH: false
