@@ -1,9 +1,10 @@
 import {ExtractJwt, Strategy, StrategyOptions} from "passport-jwt"
 import passport from 'passport'
-import User, {IUserDocument} from "../users/models.js";
+import User  from "../users/models.js";
 import UnAuthenticated from "../../../custom-errors/unauthenticated.js";
 import CustomError from "../../../custom-errors/custom-error.js";
 import {NextFunction, Request, Response} from "express"
+import { userSchemaWithId } from "./validation.js";
 
 const secret: string | undefined = process.env.SECRET_KEY;
 const validSecret: string = secret ?? '';
@@ -14,7 +15,7 @@ const opts: StrategyOptions = {
 }
 
 passport.serializeUser((user, done) => {
-    done(null, (user as IUserDocument)._id);
+    done(null, (user as userSchemaWithId)._id);
 })
 
 
@@ -51,3 +52,11 @@ export const asyncHandler = (fn: Function) => {
         })
     }
 }
+
+
+
+// export const asyncHandler = (fn: Function) => {
+//     return (req: Request, res: Response, next: NextFunction) => {
+//         fn(req, res, next).catch(next)
+//     }
+// }

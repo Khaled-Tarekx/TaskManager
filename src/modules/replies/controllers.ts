@@ -3,8 +3,8 @@ import {StatusCodes} from "http-status-codes";
 import {BadRequest, NotFound} from "../../../custom-errors/main.js";
 import Reply, {ReplyInterface} from "./models.js";
 import mongoose from "mongoose";
-import {IUserDocument} from "../users/models.js";
 import {asyncHandler} from "../auth/middleware.js";
+import { userSchemaWithId } from "../auth/validation.js";
 
 export const getReplies = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const replies = await Reply.find();
@@ -26,7 +26,7 @@ export const getReply = asyncHandler(async (req: Request, res: Response, next: N
 export const getUserReplies = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
     const userReplies = await Reply.find({
-        owner: (user as IUserDocument).id,
+        owner: (user as userSchemaWithId).id,
     });
     res.status(StatusCodes.OK).json({data: userReplies, count: userReplies.length});
 });
@@ -39,7 +39,7 @@ export const getUserReply = asyncHandler(async (req: Request, res: Response, nex
     }
     const reply = await Reply.findOne({
         _id: id,
-        owner: (user as IUserDocument).id,
+        owner: (user as userSchemaWithId).id,
     });
     if (!reply) {
         return next(new NotFound("no reply found with the given id"));
@@ -59,7 +59,7 @@ export const editReply = asyncHandler(async (req: Request, res: Response, next: 
     }
     const replyToUpdate = (await Reply.findByIdAndUpdate(
         id,
-        {...req.body, owner: (req.user as IUserDocument).id},
+        {...req.body, owner: (req.user as userSchemaWithId).id},
         {new: true, runValidators: true}
     )) as ReplyInterface;
     if (!replyToUpdate) {

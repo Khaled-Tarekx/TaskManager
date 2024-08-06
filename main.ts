@@ -23,7 +23,7 @@ export const client = Redis.createClient()
 
 client.on('error', err => console.log('Redis Client Error', err));
 
-await client.connect();
+// await client.connect();
 
 const app = express();
 app.use(express.json());

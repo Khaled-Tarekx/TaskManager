@@ -3,8 +3,8 @@ import { StatusCodes } from "http-status-codes";
 import { NotFound, BadRequest, UnAuthenticated } from "../../../custom-errors/main.js";
 import { CommentLike, CommentLikeInterface } from "./models.js";
 import mongoose from "mongoose";
-import { IUserDocument } from "../users/models.js";
 import {asyncHandler} from "../auth/middleware.js";
+import { userSchemaWithId } from "../auth/validation.js";
 
 export const getCommentLikes = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const commentLikes = await CommentLike.find();
@@ -28,7 +28,7 @@ export const getCommentLike = asyncHandler(async (req: Request, res: Response, n
 export const getUserCommentLikes = asyncHandler(async ( req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
     const userCommentLikes = await CommentLike.find({
-      owner: (user as IUserDocument).id,
+      owner: (user as userSchemaWithId).id,
     });
     res.status(StatusCodes.OK).json({ data: userCommentLikes, count: userCommentLikes.length });
 });
@@ -41,7 +41,7 @@ export const getUserCommentLike = asyncHandler(async (req: Request, res: Respons
     }
     const userCommentLike = await CommentLike.findOne({
       _id: id,
-      owner: (user as IUserDocument).id,
+      owner: (user as userSchemaWithId).id,
     });
     if (!userCommentLike) {
       return next(new NotFound("no like found with the given id"));

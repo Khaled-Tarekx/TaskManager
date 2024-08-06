@@ -1,27 +1,16 @@
 import { genSalt, compare, hash } from "bcrypt";
 import { CustomError, UnAuthenticated } from "../../../custom-errors/main.js";
 
-import  { Schema, Document, model } from 'mongoose';
+import  { Schema, model } from 'mongoose';
 import { StatusCodes } from "http-status-codes";
+import { createUserSchema, userWithMethods } from "../auth/validation.js";
 
 const SALT_ROUNDS = Number(process.env.SALT_ROUNDS);
 
 const regexString = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export interface IUser extends Document {
-  username: string;
-  isLoggedIn: boolean;
-  roles: string;
-  email: string;
-  password: string;
-  position: string;
-}
 
-export interface IUserDocument extends IUser, Document {
-  comparePassword(candidatePassword: string): Promise<boolean>;
-}
-
-const userSchema: Schema = new Schema({
+export const userSchemaM: Schema = new Schema<createUserSchema>({
   username: { type: String, required: true },
   isLoggedIn: { type: Boolean, default: false },
   roles: { type: String, default: "user",
@@ -51,9 +40,8 @@ const userSchema: Schema = new Schema({
 },
 { timestamps: true, strict: true });
 
-userSchema.pre<IUserDocument>('save', async function (next) {
+userSchemaM.pre<userWithMethods>('save', async function (next) {
   try {
-
     if (!this.isModified('password')) return next();
     const salt = await genSalt(SALT_ROUNDS);
     this.password = await hash(this.password, salt);
@@ -64,11 +52,11 @@ userSchema.pre<IUserDocument>('save', async function (next) {
   }
 });
 
-  userSchema.pre<IUserDocument>('save', async function (next) {
+userSchemaM.pre<createUserSchema>('save', async function (next) {
     try {
       const existingUser = await User.findOne({email: this.email});
       if (existingUser) {
-         next(new CustomError("this email already exists", StatusCodes.BAD_REQUEST)) 
+         return next(new CustomError("this email already exists", StatusCodes.BAD_REQUEST)) 
         }
       next()
     } catch (err: any) {
@@ -77,7 +65,7 @@ userSchema.pre<IUserDocument>('save', async function (next) {
 })
   
 
-  userSchema.methods.comparePassword = async function (
+userSchemaM.methods.comparePassword = async function (
     candidatePassword: string,
   ) {
     try {
@@ -88,6 +76,6 @@ userSchema.pre<IUserDocument>('save', async function (next) {
   }
 
 
-const User = model<IUserDocument>('User', userSchema);
+const User = model<typeof userSchemaM>('User', userSchemaM);
 export default User 
 

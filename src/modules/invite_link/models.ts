@@ -1,23 +1,14 @@
-import mongoose, {Document, model, Schema} from 'mongoose';
+import mongoose, { model, Schema} from 'mongoose';
+import uuid from "uuid"
 
-export interface  InviteLinkInterface extends Document {
-  link: String,
-  user: mongoose.Types.ObjectId
-  workspace:  mongoose.Types.ObjectId
-  expiresAt: Date,
-  createdAt: Date
-}
-
-
-
-const InviteLinkSchema = new Schema ({
-  link: String,
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  workspace: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkSpace' },
-   expiresAt: { type: Date, default: () => Date.now() / 1000 + 3600 }, // expires in 1 hour
+export const InviteLinkSchema = new Schema ({
+  path: { type: String, default: uuid.v4() },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  workspace: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkSpace', required: true },
+  expiresAt: { type: Date, default: () => Date.now() / 1000 + 3600 }, // expires in 1 hour
   createdAt: { type: Date, default: Date.now }
 })
 
-const inviteLink = model('inviteLink', InviteLinkSchema)
+const InviteLink = model('InviteLink', InviteLinkSchema)
 
-export default inviteLink
+export default InviteLink

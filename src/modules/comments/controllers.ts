@@ -1,17 +1,19 @@
 import {NextFunction, Request, Response} from "express";
 import {StatusCodes} from "http-status-codes";
 import {BadRequest, NotFound, UnAuthenticated,} from "../../../custom-errors/main.js";
-import Comment, {CommentInterface} from "./models.js";
-import mongoose from "mongoose";
-import {IUserDocument} from "src/modules/users/models.js";
+import Comment,{CommentSchema} from "./models.js";
+import mongoose, { HydratedDocument, HydratedDocumentFromSchema} from "mongoose";
 import {asyncHandler} from "../auth/middleware.js";
+import { userSchemaWithId } from "../auth/validation.js";
+import { CommentCreateSchema } from "./validation.js";
+
 
 export const getComments = asyncHandler(async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
-    const comments = await Comment.find();
+    const comments = await Comment.find({});
     res.status(StatusCodes.OK).json({data: comments, count: comments.length});
 
 });
@@ -30,13 +32,12 @@ export const getComment = asyncHandler(async (
         return next(new NotFound("no comment found with the given id"));
     }
     res.status(StatusCodes.OK).json({data: comment});
-
 });
 
 export const getUserComments = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
     const userComments = await Comment.find({
-        owner: (user as IUserDocument).id,
+        owner: (user as userSchemaWithId).id,
     });
     res.status(StatusCodes.OK).json({data: userComments, count: userComments.length});
 });
@@ -49,7 +50,7 @@ export const getUserComment = asyncHandler(async (req: Request, res: Response, n
     }
     const comment = await Comment.findOne({
         _id: id,
-        owner: (user as IUserDocument).id,
+        owner: (user as userSchemaWithId).id,
     });
     if (!comment) {
         return next(new NotFound("no comment found with the given id"));
@@ -59,27 +60,29 @@ export const getUserComment = asyncHandler(async (req: Request, res: Response, n
 });
 
 export const createComment = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const comment = Comment.create({...req.body});
+    const {owner, task, context}: CommentCreateSchema = req.body
+    const comment = await Comment.create({owner, task, context});
     res.status(StatusCodes.CREATED).json({data: comment});
 });
 
-export const editComment = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const editComment = asyncHandler(async (req: Request<{ id: string },{}, CommentCreateSchema>, res: Response, next: NextFunction) => {
     const {id} = req.params;
+    const { context } = req.body
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return next(new BadRequest("Invalid ID format"));
     }
-    const commentToUpdate = (await Comment.findByIdAndUpdate(
+    const commentToUpdate = await Comment.findByIdAndUpdate(
         id,
-        {...req.body, owner: (req.user as IUserDocument).id},
+        { context },
         {new: true, runValidators: true}
-    )) as CommentInterface;
-
-    if (req.user !== commentToUpdate.owner) {
-        return next(new UnAuthenticated("you only have permission to update your comments"))
-    }
+    )
 
     if (!commentToUpdate) {
         return next(new NotFound("no comment found"));
+    }
+
+    if (req.user !== commentToUpdate.owner) {
+        return next(new UnAuthenticated("you only have permission to update your comments"))
     }
 
     res.status(StatusCodes.OK).json({msg: "comment updated successfully", data: commentToUpdate});
@@ -90,14 +93,14 @@ export const deleteComment = asyncHandler(async (req: Request, res: Response, ne
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return next(new BadRequest("Invalid ID format"));
     }
-    const commentToDelete = await Comment.findByIdAndDelete(id) as CommentInterface;
-
-    if (req.user !== commentToDelete.owner) {
-        return next(new UnAuthenticated("you only have permission to update your comments"))
-    }
+    const commentToDelete = await Comment.findByIdAndDelete(id)
 
     if (!commentToDelete) {
         return next(new NotFound("no comment found"));
+    }
+
+    if (req.user !== commentToDelete.owner) {
+        return next(new UnAuthenticated("you only have permission to update your comments"))
     }
 
     res.status(StatusCodes.OK).json({msg: "comment deleted successfully", data: commentToDelete});

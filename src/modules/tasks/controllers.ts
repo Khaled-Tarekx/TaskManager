@@ -1,12 +1,12 @@
 import {NextFunction, Request, Response} from "express";
 import Task, {TaskInterface} from "./models.js";
-import {IUserDocument} from "../users/models.js";
 import {StatusCodes} from "http-status-codes";
 import {BadRequest, NotFound} from "../../../custom-errors/main.js";
 import {notifyUserOfUpcomingDeadline} from "./utilities.js";
 import mongoose from "mongoose";
 import {getOrSetCache} from "../../setup/helpers.js"
 import {asyncHandler} from "../auth/middleware.js";
+import { userSchemaWithId } from "../auth/validation.js";
 
 
 export const getTasks = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
@@ -22,7 +22,7 @@ export const getTasksPage = asyncHandler(async (req: Request, res: Response, nex
 
 export const getUserTasks = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
-    const tasks = await Task.find({owner: (user as IUserDocument).id});
+    const tasks = await Task.find({owner: (user as userSchemaWithId).id});
     res.status(StatusCodes.OK).json({data: tasks, count: tasks.length});
 });
 
@@ -33,7 +33,7 @@ export const getUserTask = asyncHandler(async (req: Request, res: Response, next
         return next(new BadRequest("Invalid ID format"));
     }
     const task = await Task.findOne({
-        owner: (user as IUserDocument).id,
+        owner: (user as userSchemaWithId).id,
         _id: id,
     });
     if (!task) {
@@ -83,7 +83,7 @@ export const updateTask = asyncHandler(async (req: Request, res: Response, next:
     }
     const taskToUpdate = (await Task.findByIdAndUpdate(
         id,
-        {...req.body, attachment: req.file?.path, owner: (req.user as IUserDocument).id},
+        {...req.body, attachment: req.file?.path, owner: (req.user as userSchemaWithId).id},
         {new: true, runValidators: true}
     )) as TaskInterface;
     if (!taskToUpdate) {

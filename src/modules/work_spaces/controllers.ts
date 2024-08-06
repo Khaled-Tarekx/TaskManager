@@ -5,8 +5,8 @@ import WorkSpaceMembers, {Role} from "../work_space_members/models.js";
 import {NextFunction, Request, Response} from "express"
 import {StatusCodes} from "http-status-codes";
 import mongoose from "mongoose";
-import {IUserDocument} from "../users/models";
 import {asyncHandler} from "../auth/middleware.js";
+import { userSchemaWithId } from "../auth/validation.js";
 
 export const getWorkSpaces = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const workSpaces = await WorkSpace.find()
@@ -17,10 +17,10 @@ export const getWorkSpaces = asyncHandler(async (req: Request, res: Response, ne
 export const createWorkSpace = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const {name, type} = req.body
     const user = req.user
-    const workSpace = await WorkSpace.create({name, type})
+    const workSpace = await WorkSpace.create({ name, type })
     const owner = await WorkSpaceMembers.create({
         role: Role.Owner,
-        user: (user as IUserDocument).id,
+        user: (user as userSchemaWithId).id,
         workspace: workSpace.id,
     });
     res.status(StatusCodes.OK).json({

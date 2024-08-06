@@ -3,8 +3,8 @@ import {StatusCodes} from "http-status-codes";
 import {BadRequest, NotFound, UnAuthenticated} from "../../../custom-errors/main.js";
 import {ReplyLike, ReplyLikeInterface} from "./models.js";
 import mongoose from "mongoose";
-import {IUserDocument} from "../users/models.js";
 import {asyncHandler} from "../auth/middleware.js";
+import { userSchemaWithId } from "../auth/validation.js";
 
 export const getReplyLikes = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const replyLikes = await ReplyLike.find();
@@ -27,7 +27,7 @@ export const getReplyLike = asyncHandler(async (req: Request, res: Response, nex
 export const getUserReplyLikes = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         const user = req.user;
         const userReplyLikes = await ReplyLike.find({
-            owner: (user as IUserDocument).id,
+            owner: (user as userSchemaWithId).id,
         });
         res.status(StatusCodes.OK).json({data: userReplyLikes, count: userReplyLikes.length});
 });
@@ -40,7 +40,7 @@ export const getUserReplyLike = asyncHandler(async (req: Request, res: Response,
         }
         const userReplyLike = await ReplyLike.findOne({
             _id: id,
-            owner: (user as IUserDocument).id,
+            owner: (user as userSchemaWithId).id,
         });
         if (!userReplyLike) {
             return next(new NotFound("no like found with the given id"));
