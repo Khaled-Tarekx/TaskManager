@@ -1,35 +1,22 @@
-import { Schema, model, Document } from 'mongoose';
+import {Schema, model} from 'mongoose';
 
+const CommentLikeSchema = new Schema(
+	{
+		comment: {type: Schema.Types.ObjectId, ref: 'Comment'},
+		owner: {type: Schema.Types.ObjectId, ref: 'User'},
+	},
+	{timestamps: true}
+);
 
-export interface CommentLikeInterface extends Document {
-    comment: Schema.Types.ObjectId,
-    owner: Schema.Types.ObjectId,
-}
+const ReplyLikeSchema = new Schema(
+	{
+		reply: {type: Schema.Types.ObjectId, ref: 'Reply'},
+		owner: {type: Schema.Types.ObjectId, ref: 'User'},
+	},
+	{timestamps: true}
+);
 
+const CommentLike = model('CommentLike', CommentLikeSchema);
+const ReplyLike = model('ReplyLike', ReplyLikeSchema);
 
-export interface ReplyLikeInterface extends Document {
-    reply: Schema.Types.ObjectId,
-    owner: Schema.Types.ObjectId,
-}
-
-const CommentLikeSchema: Schema = new Schema(
-    {
-        comment : { type: Schema.Types.ObjectId, ref: 'Comment' },
-        owner:  { type: Schema.Types.ObjectId, ref: 'User' },
-    },
-    { timestamps: true}
-)
-
-const ReplyLikeSchema: Schema = new Schema(
-    {
-        reply : { type: Schema.Types.ObjectId, ref: 'Reply' },
-        owner:  { type: Schema.Types.ObjectId, ref: 'User' },
-    },
-    { timestamps: true}
-)
-
-
-const CommentLike = model<CommentLikeInterface>('CommentLike', CommentLikeSchema)
-const ReplyLike = model<ReplyLikeInterface>('ReplyLike', ReplyLikeSchema)
-
-export { CommentLike, ReplyLike }
+export {CommentLike, ReplyLike};

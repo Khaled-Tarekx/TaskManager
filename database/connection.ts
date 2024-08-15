@@ -2,12 +2,16 @@ import mongoose from "mongoose";
 
 
 
+
 const uri: string | undefined = process.env.URI;
-const validUri: string = uri ?? '';
+
+if (!uri ) {
+    throw new Error('uri is not found')
+}
 
 const connectWithRetry = async () => {
     console.log('MongoDB connection with retry');
-    await mongoose.connect(validUri, {
+    await mongoose.connect(uri, {
         serverSelectionTimeoutMS: 30000, // 30 seconds
         connectTimeoutMS: 30000 // 30 seconds
     }).then(() => {

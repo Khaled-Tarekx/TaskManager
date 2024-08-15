@@ -8,9 +8,8 @@
     ],
     "typeRoots": [
       "./src/types",
-      "./node_modules/@types"
+      "./node_modules/@types",
     ],
-    // "types": ["vitest/globals"],
     "outDir": "./dist",
     "allowJs": false,
     "strict": true,
@@ -51,6 +50,7 @@
     "./src/**/*",
     "./src/types/global.d.ts",
     ".eslintrc.cjs",
+    "express_user.d.ts",
     "."
   ],
   "exclude": [
@@ -62,8 +62,6 @@
     "experimentalSpecifierResolution": "node",
     "require": [
       "tsconfig-paths/register"
-    ],
-    // TODO for some reason, this is not working
-    "files": true
+    ]
   }
 }
