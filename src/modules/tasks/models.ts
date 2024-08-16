@@ -1,31 +1,35 @@
-import mongoose, { Schema, model, Document } from 'mongoose';
+import { getModelForClass, prop, type Ref } from '@typegoose/typegoose';
+import { TimeStamps } from '@typegoose/typegoose/lib/defaultClasses';
+import { Types } from 'mongoose';
+import { Status } from './types.js';
+import { UserSchema } from '../users/models.js';
 
-export interface TaskInterface extends Document {
-	priority: number;
-	owner: mongoose.Types.ObjectId;
-	skill_set: [string];
-	attachment: String;
-	dead_line: Date;
-	status: String;
-	dependants: mongoose.Types.ObjectId[];
+export class TaskSchema extends TimeStamps {
+	@prop({ type: () => Number, required: true, max: 10 })
+	public priority!: number;
+
+	@prop({ ref: () => UserSchema, required: true })
+	public owner!: Ref<UserSchema>;
+
+	@prop({ type: () => [String], required: true })
+	public skill_set!: Types.Array<string>;
+
+	@prop({ type: () => String, required: true })
+	public attachment!: string;
+
+	@prop({ required: true })
+	public dead_line!: Date;
+
+	@prop({ ref: () => TaskSchema })
+	public dependants?: Types.Array<Ref<TaskSchema>>;
+
+	@prop({
+		enum: Status,
+		default: Status.Unassigned,
+	})
+	public status!: Status;
 }
 
-const TaskSchema: Schema = new Schema(
-	{
-		priority: { type: Number, required: true, max: 10 },
-		owner: { type: Schema.Types.ObjectId, ref: 'User' },
-		skill_set: [{ type: String }],
-		attachment: { type: String },
-		dead_line: { type: Date, required: true },
-		dependants: [{ type: Schema.Types.ObjectId, ref: 'Task' }],
-		status: {
-			type: String,
-			enum: ['unAssigned', 'inProgress', 'completed'],
-			default: 'unAssigned',
-		},
-	},
-	{ timestamps: true }
-);
+const TaskModel = getModelForClass(TaskSchema);
 
-const Task = model('Task', TaskSchema);
-export default Task;
+export default TaskModel;

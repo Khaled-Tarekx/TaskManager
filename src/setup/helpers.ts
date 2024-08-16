@@ -1,6 +1,6 @@
 import z from 'zod';
 import { client } from '../../main.js';
-import mongoose, { Types } from 'mongoose';
+import mongoose, { Types, type HydratedDocument } from 'mongoose';
 import { NotFound, CustomError } from '../../custom-errors/main.js';
 import { Model } from 'mongoose';
 
@@ -31,8 +31,8 @@ export const getOrSetCache = (
 	});
 };
 
-export const validateMongooseId = z.custom<string>(
-	(v) => Types.ObjectId.isValid(v),
+export const mongooseId = z.custom<string>(
+	(v: string) => Types.ObjectId.isValid(v),
 	{
 		message: 'id is not valid mongoose id ',
 	}
@@ -41,14 +41,16 @@ export const validateMongooseId = z.custom<string>(
 export const findResourceById = async <T>(
 	model: Model<T>,
 	id: string
-): Promise<T> => {
+): Promise<HydratedDocument<T>> => {
 	try {
-		const resource = await model.findById(id);
+		const resource = await model.findById(id).exec();
+
 		if (!resource)
 			throw new NotFound(
 				`the resource you are trying to access is not found`
 			);
-		return resource;
+
+		return resource.toObject();
 	} catch (err: any) {
 		throw new CustomError(err.message, 401);
 	}

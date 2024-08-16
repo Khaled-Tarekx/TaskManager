@@ -1,11 +1,10 @@
 import User from '../users/models.js';
 import moment from 'moment';
-import { TaskInterface } from './models.js';
+import { TaskSchema } from './models.js';
 import { BadRequest, NotFound } from '../../../custom-errors/main.js';
 import emailQueue from './queue.js';
 
-export const notifyUserOfUpcomingDeadline = async (task: any) => {
-	// TODO: type this correctly
+export const notifyUserOfUpcomingDeadline = async (task: TaskSchema) => {
 	const currentTime = moment(new Date());
 	const deadLine = moment(new Date(task.dead_line));
 	const daysUntilDeadline = deadLine.diff(currentTime, 'days');
@@ -31,10 +30,7 @@ export const notifyUserOfUpcomingDeadline = async (task: any) => {
 	}
 };
 
-export const sendNotification = async (
-	message: string,
-	task: TaskInterface
-) => {
+export const sendNotification = async (message: string, task: TaskSchema) => {
 	try {
 		const user = await User.findById(task.owner);
 		if (!user) {

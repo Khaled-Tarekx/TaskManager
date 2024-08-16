@@ -1,26 +1,41 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "ESNext"
-    ],
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": true,
+
+    // Bundler mode
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    // Best practices
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Some stricter flags
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noPropertyAccessFromIndexSignature": true,
+    
     "typeRoots": [
       "./src/types",
       "./node_modules/@types",
     ],
     "outDir": "./dist",
-    "allowJs": false,
-    "strict": true,
+
     "forceConsistentCasingInFileNames": true,
-    "noEmit": false,
     "esModuleInterop": true,
-    "module": "ESNext",
-    "moduleResolution": "node",
+
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
     "incremental": true,
     "baseUrl": ".",
     "paths": {
@@ -43,7 +58,6 @@
       //        "./src/common/env.ts"
       //      ]
     },
-    "skipLibCheck": true
   },
   "include": [
     "./src/*.ts",

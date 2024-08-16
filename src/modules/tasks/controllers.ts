@@ -1,5 +1,5 @@
-import { NextFunction, Request, Response } from 'express';
-import Task, { TaskInterface } from './models.js';
+import { type NextFunction, type Request, type Response } from 'express';
+import Task from './models.js';
 import { StatusCodes } from 'http-status-codes';
 import {
 	BadRequest,
@@ -11,16 +11,15 @@ import { notifyUserOfUpcomingDeadline } from './utilities.js';
 import mongoose from 'mongoose';
 import { findResourceById, getOrSetCache } from '../../setup/helpers.js';
 import { asyncHandler } from '../auth/middleware.js';
-import { TypedRequestBody } from 'zod-express-middleware';
+import { type TypedRequestBody } from 'zod-express-middleware';
 import { taskSchema, updateTaskSchema } from './validation.js';
 import { isResourceOwner } from '../users/helpers.js';
+import { Status } from './types.js';
 
-export const getTasks = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const tasks = await getOrSetCache('tasks', Task, (model) => model.find());
-		res.status(StatusCodes.OK).json({ data: tasks });
-	}
-);
+export const getTasks = asyncHandler(async (req: Request, res: Response) => {
+	const tasks = await getOrSetCache('tasks', Task, (model) => model.find());
+	res.status(StatusCodes.OK).json({ data: tasks });
+});
 
 export const getTasksPage = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
@@ -98,8 +97,8 @@ export const createTask = asyncHandler(
 			attachment: attachment.path,
 		});
 		if (owner) {
-			task.status = 'inProgress';
-			task.owner = owner;
+			task.status = Status.InProgress;
+			task.owner.id = owner;
 			await task.save();
 			try {
 				await notifyUserOfUpcomingDeadline(task);
@@ -122,30 +121,37 @@ export const updateTask = asyncHandler(
 		next: NextFunction
 	) => {
 		const { taskId } = req.params;
+		const { priority, skill_set, dead_line } = req.body;
 		const user = req.user;
-		const { priority, skill_set, dead_line, status } = req.body;
 		const attachment = req.file;
+
 		if (!attachment || !attachment.path) {
 			return next(new NotFound('No file uploaded or file path is missing'));
 		}
+
 		try {
-			const task = findResourceById(Task, taskId);
+			const task = await findResourceById(Task, taskId);
 
 			if (!user?.id) {
 				return next(new UnAuthenticated('log in first to grant access'));
 			}
-			if (!(await isResourceOwner(user.id, task.owner.toString()))) {
+
+			const userIsResourceOwner = await isResourceOwner(
+				user.id,
+				task.owner.id
+			);
+			if (!userIsResourceOwner) {
 				return next(
 					new UnAuthenticated('you are the not the owner of this resource')
 				);
 			}
+
 			const taskToUpdate = await Task.findByIdAndUpdate(
 				task.id,
 				{
-					priority,
-					skill_set,
-					dead_line,
-					status,
+					priority: priority,
+					skill_set: skill_set,
+					dead_line: dead_line,
 					attachment: attachment.path,
 					owner: user.id,
 				},
@@ -167,15 +173,12 @@ export const updateTask = asyncHandler(
 );
 
 export const deleteTask = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
+	async (req: Request, res: Response) => {
 		const { id } = req.params;
-		if (!mongoose.Types.ObjectId.isValid(id)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
-		const taskToDelete = await Task.findByIdAndDelete(id);
-		if (!taskToDelete) {
-			return next(new NotFound('no task found'));
-		}
+		const task = await findResourceById(Task, id);
+
+		await Task.findByIdAndDelete(task.id);
+
 		res.status(StatusCodes.OK).json({ msg: 'task deleted successfully' });
 	}
 );
@@ -183,15 +186,26 @@ export const deleteTask = asyncHandler(
 export const assignTask = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		const { id, user_id } = req.params;
-		if (!mongoose.Types.ObjectId.isValid(id)) {
-			return next(new BadRequest('Invalid ID format'));
+		const user = req.user;
+		if (!user?.id) {
+			return next(new UnAuthenticated('log in first to grant access'));
 		}
+		const task = await findResourceById(Task, id);
 
-		const assignedTask = (await Task.findByIdAndUpdate(
-			id,
+		const userIsResourceOwner = await isResourceOwner(user.id, task.owner.id);
+		if (!userIsResourceOwner) {
+			return next(
+				new UnAuthenticated('you are the not the owner of this resource')
+			);
+		}
+		const assignedTask = await Task.findByIdAndUpdate(
+			task.id,
 			{ owner: user_id, status: 'inProgress' },
-			{ new: true, runValidators: true }
-		)) as TaskInterface;
+			{ new: true }
+		).populate({
+			path: 'owner',
+			select: 'email position',
+		});
 
 		if (!assignedTask) {
 			return next(new NotFound('no task found'));
@@ -202,6 +216,7 @@ export const assignTask = asyncHandler(
 		res.status(StatusCodes.OK).json({
 			msg: 'task assigned to user successfully',
 			data: assignedTask,
+			assignedUser: user_id,
 		});
 	}
 );
