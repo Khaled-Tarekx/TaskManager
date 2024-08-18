@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer';
-import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 const transporter = nodemailer.createTransport({
 	host: process.env.MAILER_HOST,
@@ -11,9 +10,9 @@ const transporter = nodemailer.createTransport({
 		user: process.env.ADMIN_EMAIL,
 		pass: process.env.ADMIN_PASSWORD,
 	},
-} as SMTPTransport.Options);
+});
 
-transporter.verify((error, success) => {
+transporter.verify((error: Error | null, success: boolean) => {
 	if (error) {
 		console.log(error.message);
 	} else {

@@ -1,21 +1,23 @@
-import User, { userSchema } from '../users/models.js';
+import User, { UserSchema } from '../users/models.js';
 import jwt from 'jsonwebtoken';
 import { CustomError, NotFound } from '../../../custom-errors/main.js';
 import { StatusCodes } from 'http-status-codes';
-import { AnyZodObject, ZodError } from 'zod';
-import { NextFunction, Request, Response } from 'express';
+import { type AnyZodObject, ZodError } from 'zod';
+import type { NextFunction, Request, Response } from 'express';
 import { asyncHandler } from './middleware.js';
-import { HydratedDocumentFromSchema } from 'mongoose';
 import { compare } from 'bcrypt';
 import UnAuthenticated from '../../../custom-errors/unauthenticated.js';
+import type { HydratedDocument } from 'mongoose';
 
 const secret: string | undefined = process.env.SECRET_KEY;
 if (!secret) {
 	throw new CustomError('secret not found', 404);
 }
 
-export const createTokenFromUser = async (
-	user: HydratedDocumentFromSchema<typeof userSchema>
+export const createTokenFromUser = async <T>(
+	user: T extends HydratedDocument<UserSchema>
+		? T
+		: HydratedDocument<UserSchema>
 ) => {
 	try {
 		const tokenUser = await User.findOne({ email: user.email });
@@ -78,10 +80,10 @@ export const validateResource = ({
 export const comparePassword = async (
 	normalPassword: string,
 	hashedPassword: string
-) => {
+): Promise<Boolean> => {
 	try {
 		return compare(normalPassword, hashedPassword);
 	} catch (err: any) {
-		throw new UnAuthenticated(`err checking password: ${err.message}`);
+		throw new UnAuthenticated(`err.message`);
 	}
 };

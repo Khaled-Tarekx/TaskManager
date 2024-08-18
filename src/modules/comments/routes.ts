@@ -1,43 +1,47 @@
-import { Router } from 'express';
+import {Router} from 'express';
 import {
-	getComment,
-	getComments,
-	createComment,
-	getUserComments,
-	getUserComment,
-	editComment,
-	deleteComment,
+    getComment,
+    getTaskComments,
+    createComment,
+    getUserComments,
+    getUserComment,
+    editComment,
+    deleteComment,
 } from './controllers.js';
-import { validateResource } from '../auth/utillities.js';
-import { commentParamValidation, commentValidation } from './validation.js';
+import {validateResource} from '../auth/utillities.js';
+import {
+    commentParamSchema,
+    createCommentSchema,
+    updateCommentSchema,
+} from './validation.js';
 
 const router = Router();
 router
-	.route('/')
-	.get(getComments)
-	.post(validateResource({ bodySchema: commentValidation }), createComment);
+    .route('/')
+    .get(getTaskComments)
+    .post(validateResource({bodySchema: createCommentSchema}), createComment);
 router.route('/me').get(getUserComments);
 router.route('/me/:id').get(getUserComment);
 router
-	.route('/:id')
-	.get(
-		validateResource({
-			paramsSchema: commentParamValidation,
-		}),
-		getComment
-	)
-	.patch(
-		validateResource({
-			bodySchema: commentValidation,
-			paramsSchema: commentParamValidation,
-		}),
-		editComment
-	)
-	.delete(
-		validateResource({
-			paramsSchema: commentParamValidation,
-		}),
-		deleteComment
-	);
+    .route('/:id')
+    .get(
+        validateResource({
+            paramsSchema: commentParamSchema,
+        }),
+        getComment
+    )
+    .patch(
+        validateResource({
+            bodySchema: updateCommentSchema,
+            paramsSchema: commentParamSchema,
+        }),
+        editComment
+    )
+    .delete(
+        validateResource({
+            paramsSchema: commentParamSchema,
+        }),
+        deleteComment
+    );
 
 export default router;

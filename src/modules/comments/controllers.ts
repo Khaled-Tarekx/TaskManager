@@ -1,154 +1,123 @@
-import { NextFunction, Request, Response } from 'express';
-import { StatusCodes } from 'http-status-codes';
-import {
-	BadRequest,
-	NotFound,
-	UnAuthenticated,
-} from '../../../custom-errors/main.js';
+import type {Request, Response} from 'express';
+import {StatusCodes} from 'http-status-codes';
 import Comment from './models.js';
-import mongoose from 'mongoose';
-import { asyncHandler } from '../auth/middleware.js';
-import { CommentCreateSchema } from './validation.js';
-import { isResourceOwner } from '../users/helpers.js';
-import { findResourceById } from 'src/setup/helpers.js';
+import {asyncHandler} from '../auth/middleware.js';
+import {isResourceOwner} from '../users/helpers.js';
+import {
+    findResourceById,
+    checkUser, validateObjectIds, checkResource,
+} from 'src/setup/helpers.js';
+import type {TypedRequestBody} from 'zod-express-middleware';
+import type {
+    createCommentSchema,
+    updateCommentSchema,
+} from './validation.js';
 
-export const getComments = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const comments = await Comment.find({});
-		res
-			.status(StatusCodes.OK)
-			.json({ data: comments, count: comments.length });
-	}
+export const getTaskComments = asyncHandler(
+    async (req: Request, res: Response) => {
+        const {taskId} = req.params
+        validateObjectIds([taskId])
+        const comments = await Comment.find({task: taskId});
+        res.status(StatusCodes.OK).json({data: comments, count: comments.length});
+    }
 );
 
 export const getComment = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const { id } = req.params;
-		if (!mongoose.Types.ObjectId.isValid(id)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
-		const comment = await Comment.findById(id);
-		if (!comment) {
-			return next(new NotFound('no comment found with the given id'));
-		}
-		res.status(StatusCodes.OK).json({ data: comment });
-	}
+    async (req: Request, res: Response) => {
+        const {commentId} = req.params;
+        validateObjectIds([commentId])
+        const comment = await findResourceById(Comment, commentId);
+        res.status(StatusCodes.OK).json({data: comment});
+    }
 );
 
 export const getUserComments = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const user = req.user;
+    async (req: Request, res: Response) => {
+        const user = req.user;
+        const loggedInUser = await checkUser(user);
+        const userComments = await Comment.find({
+            owner: loggedInUser.id,
+        });
 
-		if (!user) {
-			return next(new UnAuthenticated('log in first to grant access'));
-		}
-
-		const userComments = await Comment.find({
-			owner: user.id,
-		});
-		res
-			.status(StatusCodes.OK)
-			.json({ data: userComments, count: userComments.length });
-	}
+        res
+            .status(StatusCodes.OK)
+            .json({data: userComments, count: userComments.length});
+    }
 );
 
 export const getUserComment = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const { id } = req.params;
-		const user = req.user;
+    async (req: Request, res: Response) => {
+        const {commentId} = req.params;
+        const user = req.user;
+        validateObjectIds([commentId])
+        const loggedInUser = await checkUser(user);
+        const comment = await Comment.findOne({
+            _id: commentId,
+            owner: loggedInUser.id,
+        });
+        await checkResource(comment)
 
-		if (!mongoose.Types.ObjectId.isValid(id)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
-
-		if (!user) {
-			return next(new UnAuthenticated('log in first to grant access'));
-		}
-		const comment = await Comment.findOne({
-			_id: id,
-			owner: user.id,
-		});
-
-		if (!comment) {
-			return next(new NotFound('no comment found with the given id'));
-		}
-
-		res.status(StatusCodes.OK).json({ data: comment });
-	}
+        res.status(StatusCodes.OK).json({data: comment});
+    }
 );
 
 export const createComment = asyncHandler(
-	async (
-		req: Request<{}, {}, CommentCreateSchema>,
-		res: Response,
-		next: NextFunction
-	) => {
-		const { owner, task, context } = req.body;
-		const comment = await Comment.create({ owner, task, context });
-		res.status(StatusCodes.CREATED).json({ data: comment });
-	}
+    async (
+        req: TypedRequestBody<typeof createCommentSchema>,
+        res: Response
+    ) => {
+        const {taskId, context} = req.body;
+        validateObjectIds([taskId])
+        const user = req.user;
+        const loggedInUser = await checkUser(user);
+
+        const comment = await Comment.create({
+            owner: loggedInUser.id,
+            task: taskId,
+            context,
+        });
+        await checkResource(comment)
+        res.status(StatusCodes.CREATED).json({data: comment});
+    }
 );
 
 export const editComment = asyncHandler(
-	async (
-		req: Request<
-			{
-				commentId: string;
-			},
-			{},
-			CommentCreateSchema
-		>,
-		res: Response,
-		next: NextFunction
-	) => {
-		const { commentId } = req.params;
-		const user = req.user;
-		if (!user?.id) {
-			return next(new UnAuthenticated('log in first to grant access'));
-		}
-		const { context } = req.body;
-		const comment = await findResourceById(Comment, commentId);
-		if (!comment) {
-			return next(new NotFound('comment not found'));
-		}
-		if (!isResourceOwner(user.id, comment.owner.toString())) {
-			return next(
-				new UnAuthenticated('you are the not the owner of this resource')
-			);
-		}
+    async (
+        req: TypedRequestBody<typeof updateCommentSchema>,
+        res: Response,
+    ) => {
+        const {commentId} = req.params;
+        const user = req.user;
+        const {context} = req.body;
+        validateObjectIds([commentId])
+        const loggedInUser = await checkUser(user);
+        const comment = await findResourceById(Comment, commentId);
+        await isResourceOwner(loggedInUser.id, comment.owner.id);
 
-		const commentToUpdate = await Comment.findByIdAndUpdate(
-			comment.id,
-			{ context },
-			{ new: true }
-		);
+        const commentToUpdate = await Comment.findByIdAndUpdate(
+            comment.id,
+            {context},
+            {new: true}
+        );
 
-		if (!commentToUpdate) {
-			return next(new NotFound('no comment found'));
-		}
+        await checkResource(commentToUpdate)
 
-		res.status(StatusCodes.OK).json({ data: commentToUpdate });
-	}
+        res.status(StatusCodes.OK).json({data: commentToUpdate});
+    }
 );
 
 export const deleteComment = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const { commentId } = req.params;
+    async (req: Request, res: Response) => {
+        const user = req.user;
+        const {commentId} = req.params;
+        validateObjectIds([commentId])
 
-		const commentToDelete = await Comment.findByIdAndDelete(commentId);
+        const loggedInUser = await checkUser(user);
+        const comment = await findResourceById(Comment, commentId);
+        await isResourceOwner(loggedInUser.id, comment.owner.id);
 
-		if (!commentToDelete) {
-			return next(new NotFound('no comment found'));
-		}
+        await Comment.findByIdAndDelete(comment.id);
 
-		if (req.user !== commentToDelete.owner) {
-			return next(
-				new UnAuthenticated(
-					'you only have permission to update your comments'
-				)
-			);
-		}
-
-		res.status(StatusCodes.OK).json({ msg: 'comment deleted successfully' });
-	}
+        res.status(StatusCodes.OK).json({msg: 'comment deleted successfully'});
+    }
 );

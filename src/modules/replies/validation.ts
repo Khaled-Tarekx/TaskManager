@@ -1,17 +1,14 @@
-import { validateMongooseId } from 'src/setup/helpers';
+import {mongooseId} from 'src/setup/helpers';
 
 import z from 'zod';
 
-export const createReplyValidation = z.object({
-	comment: validateMongooseId,
-	owner: validateMongooseId,
-	parentReply: validateMongooseId,
-	repliesOfReply: z.array(validateMongooseId),
-	context: z.string(),
+export const createReplySchema = z.object({
+    comment: mongooseId,
+    owner: mongooseId,
+    parentReply: mongooseId,
+    repliesOfReply: z.array(mongooseId),
+    context: z.string(),
 });
-
-export type createReplySchema = z.infer<typeof createReplyValidation>;
-
-export const updateReplyValidation = z.object({
-	context: z.string(),
+export const updateReplySchema = z.object({
+    context: z.string(),
 });

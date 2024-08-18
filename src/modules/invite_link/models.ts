@@ -1,14 +1,28 @@
-import mongoose, { model, Schema} from 'mongoose';
-import uuid from "uuid"
+import { getModelForClass, prop, type Ref } from '@typegoose/typegoose';
+import { v4 as uuidv4 } from 'uuid';
+import { UserSchema } from '../users/models.js';
+import { WorkSpaceSchema } from '../work_spaces/models.js';
 
-export const InviteLinkSchema = new Schema ({
-  path: { type: String, default: uuid.v4() },
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  workspace: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkSpace', required: true },
-  expiresAt: { type: Date, default: () => Date.now() / 1000 + 3600 }, // expires in 1 hour
-  createdAt: { type: Date, default: Date.now }
-})
+export class InviteSchema {
+	@prop({ type: String, default: uuidv4() })
+	public token?: string;
 
-const InviteLink = model('InviteLink', InviteLinkSchema)
+	@prop({ ref: UserSchema, required: true })
+	public receiver!: Ref<UserSchema>;
 
-export default InviteLink
+	@prop({ ref: WorkSpaceSchema, required: true })
+	public workspace!: Ref<WorkSpaceSchema>;
+	@prop({
+		type: Date,
+		required: true,
+		default: () => Date.now() / 1000 + 3600,
+	})
+	public expiresAt!: Date;
+
+	@prop({ type: Date, required: true, default: Date.now })
+	public createdAt!: Date;
+}
+
+const InviteLinkModel = getModelForClass(InviteSchema);
+
+export default InviteLinkModel;

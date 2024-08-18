@@ -1,8 +1,10 @@
 import User from '../users/models.js';
 import moment from 'moment';
 import { TaskSchema } from './models.js';
-import { BadRequest, NotFound } from '../../../custom-errors/main.js';
+import { BadRequest } from '../../../custom-errors/main.js';
 import emailQueue from './queue.js';
+import { findResourceById } from 'src/setup/helpers.js';
+import Member from '../work_space_members/models';
 
 export const notifyUserOfUpcomingDeadline = async (task: TaskSchema) => {
 	const currentTime = moment(new Date());
@@ -32,12 +34,11 @@ export const notifyUserOfUpcomingDeadline = async (task: TaskSchema) => {
 
 export const sendNotification = async (message: string, task: TaskSchema) => {
 	try {
-		const user = await User.findById(task.owner);
-		if (!user) {
-			return new NotFound(`User not found for task owner ID: ${task.owner}`);
-		}
+		const member = await findResourceById(Member, task.worker.id);
+		const user = await findResourceById(User, member.member.id);
+
 		await emailQueue.add({
-			to: `${user?.email}`,
+			to: `${user.email}`,
 			subject: 'reminder: task_deadline',
 			text: message,
 			date: moment(new Date()).format('DD MM YYYY hh:mm:ss'),

@@ -1,17 +1,17 @@
-import { validateMongooseId } from 'src/setup/helpers.js';
+import { mongooseId } from 'src/setup/helpers.js';
 import z from 'zod';
+import { Role } from './types.js';
 
-const roleEnum = ['member', 'owner'] as const;
-
-export const workSpaceMembersSchema = z.object({
-	workspace: validateMongooseId,
-	user: validateMongooseId,
-	role: z.enum(roleEnum).default(roleEnum[0]),
+export const createMemberSchema = z.object({
+	workspace: mongooseId,
+	member: mongooseId,
+	role: z.nativeEnum(Role).default(Role.member),
+});
+export const validateMemberParams = z.object({
+	workspaceId: mongooseId,
+	memberId: mongooseId,
 });
 
-export const updateWorkSpaceMembersSchema = z.object({
-	role: z.enum(roleEnum),
+export const updateMemberSchema = z.object({
+	role: z.nativeEnum(Role),
 });
-
-export type workSpaceDTO = z.infer<typeof workSpaceMembersSchema>;
-export type updateWorkSpaceDTO = z.infer<typeof updateWorkSpaceMembersSchema>;

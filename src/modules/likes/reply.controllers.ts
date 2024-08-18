@@ -1,119 +1,83 @@
-import {NextFunction, Request, Response} from 'express';
-import {StatusCodes} from 'http-status-codes';
+import type { Request, Response } from 'express';
+import { StatusCodes } from 'http-status-codes';
+import { ReplyLike } from './models.js';
+import { asyncHandler } from '../auth/middleware.js';
+import { createReplyLikeSchema } from './validation.js';
+
 import {
-	BadRequest,
-	NotFound,
-	UnAuthenticated,
-} from '../../../custom-errors/main.js';
-import {ReplyLike} from './models.js';
-import mongoose from 'mongoose';
-import {asyncHandler} from '../auth/middleware.js';
-import {createReplyLikeSchema} from './validation.js';
+	checkResource,
+	checkUser,
+	findResourceById,
+	validateObjectIds,
+} from '../../setup/helpers';
+import type { TypedRequestBody } from 'zod-express-middleware';
+import { isResourceOwner } from '../users/helpers.js';
 
 export const getReplyLikes = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const replyLikes = await ReplyLike.find();
+	async (req: Request, res: Response) => {
+		const { replyId } = req.params;
+		validateObjectIds([replyId]);
+		const replyLikes = await ReplyLike.find({ reply: replyId });
 		res
 			.status(StatusCodes.OK)
-			.json({data: replyLikes, count: replyLikes.length});
+			.json({ data: replyLikes, count: replyLikes.length });
 	}
 );
 
 export const getReplyLike = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const {id} = req.params;
-		if (!mongoose.Types.ObjectId.isValid(id)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
-		const replyLike = await ReplyLike.findById(id);
-		if (!replyLike) {
-			return next(
-				new NotFound('no like found with the given id for this reply')
-			);
-		}
-		res.status(StatusCodes.OK).json({data: replyLike});
-	}
-);
+	// is this even needed?
+	async (req: Request, res: Response) => {
+		const { likeId } = req.params;
+		validateObjectIds([likeId]);
 
-export const getUserReplyLikes = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const user = req.user;
-		if (!user) {
-			return next(new UnAuthenticated('log in first to grant access'));
-		}
-		const userReplyLikes = await ReplyLike.find({
-			owner: user.id,
-		});
-		res
-			.status(StatusCodes.OK)
-			.json({data: userReplyLikes, count: userReplyLikes.length});
+		const replyLike = await findResourceById(ReplyLike, likeId);
+		res.status(StatusCodes.OK).json({ data: replyLike });
 	}
 );
 
 export const getUserReplyLike = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const {id} = req.params;
+	async (req: Request, res: Response) => {
 		const user = req.user;
-
-		if (!user) {
-			return next(new UnAuthenticated('log in first to grant access'));
-		}
-
-		if (!mongoose.Types.ObjectId.isValid(id)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
-
+		const loggedInUser = await checkUser(user);
 		const userReplyLike = await ReplyLike.findOne({
-			_id: id,
-			owner: user.id,
+			owner: loggedInUser.id,
 		});
-		if (!userReplyLike) {
-			return next(new NotFound('no like found with the given id'));
-		}
-		res.status(StatusCodes.OK).json({data: userReplyLike});
+		await checkResource(userReplyLike);
+		res.status(StatusCodes.OK).json({ data: userReplyLike });
 	}
 );
 
 export const createReplyLike = asyncHandler(
 	async (
-		req: Request<{}, {}, createReplyLikeSchema>,
-		res: Response,
-		next: NextFunction
+		req: TypedRequestBody<typeof createReplyLikeSchema>,
+		res: Response
 	) => {
 		const user = req.user;
+		const { replyId } = req.body;
+		validateObjectIds([replyId]);
 
-		if (!user) {
-			return next(new UnAuthenticated('log in first to grant access'));
-		}
-		const {reply} = req.body;
+		const loggedInUser = await checkUser(user);
 
 		const replyLike = ReplyLike.create({
-			owner: user.id,
-			reply,
+			owner: loggedInUser.id,
+			reply: replyId,
 		});
-		res.status(StatusCodes.CREATED).json({data: replyLike});
+		await checkResource(replyLike);
+		res.status(StatusCodes.CREATED).json({ data: replyLike });
 	}
 );
 
 export const deleteReplyLike = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const {id} = req.params;
+	async (req: Request, res: Response) => {
+		const user = req.user;
+		const { likeId } = req.params;
+		validateObjectIds([likeId]);
+		const loggedInUser = await checkUser(user);
 
-		if (!mongoose.Types.ObjectId.isValid(id)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
+		const replyLikeToDelete = await findResourceById(ReplyLike, likeId);
 
-		const replyLikeToDelete = await ReplyLike.findByIdAndDelete(id);
-
-		if (!replyLikeToDelete) {
-			return next(new NotFound('no like found'));
-		}
-
-		if (req.user !== replyLikeToDelete.owner) {
-			return next(
-				new UnAuthenticated('you only have permission to delete your like')
-			);
-		}
-		res.status(StatusCodes.OK).json({msg: 'like deleted successfully'});
+		await isResourceOwner(loggedInUser.id, replyLikeToDelete.owner.id);
+		await ReplyLike.findByIdAndDelete(replyLikeToDelete.id);
+		res.status(StatusCodes.OK).json({ msg: 'like deleted successfully' });
 	}
 );

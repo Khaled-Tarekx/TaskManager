@@ -1,15 +1,25 @@
-import { Schema, model } from 'mongoose';
+import { prop, type Ref, getModelForClass } from '@typegoose/typegoose';
 
-export const ReplySchema: Schema = new Schema(
-	{
-		comment: { type: Schema.Types.ObjectId, ref: 'Comment' },
-		owner: { type: Schema.Types.ObjectId, ref: 'User' },
-		parentReply: { type: Schema.Types.ObjectId, ref: 'Reply' },
-		repliesOfReply: [{ type: Schema.Types.ObjectId, ref: 'Reply' }],
-		context: { type: String, minlength: 1 },
-	},
-	{ timestamps: true }
-);
+import { TimeStamps } from '@typegoose/typegoose/lib/defaultClasses';
+import { CommentSchema } from '../comments/models';
+import { UserSchema } from '../users/models';
 
-const Reply = model('Reply', ReplySchema);
-export default Reply;
+export class ReplySchema extends TimeStamps {
+	@prop({ ref: () => CommentSchema })
+	public comment?: Ref<CommentSchema>;
+
+	@prop({ ref: () => UserSchema, required: true })
+	public owner!: Ref<UserSchema>;
+
+	@prop({ ref: () => ReplySchema })
+	public parentReply?: Ref<ReplySchema>;
+
+	@prop({ ref: () => ReplySchema, default: [] })
+	public repliesOfReply?: Ref<ReplySchema>[];
+
+	@prop({ type: () => String, required: true, minlength: 1 })
+	public context!: string;
+}
+
+const ReplyModel = getModelForClass(ReplySchema);
+export default ReplyModel;

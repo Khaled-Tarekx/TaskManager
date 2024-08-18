@@ -1,22 +1,26 @@
-import {Schema, model} from 'mongoose';
+import {getModelForClass, prop, type Ref} from '@typegoose/typegoose';
+import {CommentSchema} from "../comments/models";
+import {UserSchema} from "../users/models";
+import {TimeStamps} from "@typegoose/typegoose/lib/defaultClasses";
+import {ReplySchema} from "../replies/models";
 
-const CommentLikeSchema = new Schema(
-	{
-		comment: {type: Schema.Types.ObjectId, ref: 'Comment'},
-		owner: {type: Schema.Types.ObjectId, ref: 'User'},
-	},
-	{timestamps: true}
-);
+class CommentLikeSchema extends TimeStamps {
+    @prop({ref: () => CommentSchema, required: true})
+    public comment!: Ref<CommentSchema>;
 
-const ReplyLikeSchema = new Schema(
-	{
-		reply: {type: Schema.Types.ObjectId, ref: 'Reply'},
-		owner: {type: Schema.Types.ObjectId, ref: 'User'},
-	},
-	{timestamps: true}
-);
+    @prop({ref: () => UserSchema, required: true})
+    public owner!: Ref<UserSchema>;
+}
 
-const CommentLike = model('CommentLike', CommentLikeSchema);
-const ReplyLike = model('ReplyLike', ReplyLikeSchema);
+class ReplyLikeSchema extends TimeStamps {
+    @prop({ref: () => ReplySchema, required: true})
+    public reply!: Ref<ReplySchema>;
 
-export {CommentLike, ReplyLike};
+    @prop({ref: () => UserSchema, required: true})
+    public owner!: Ref<UserSchema>;
+
+}
+
+export const CommentLike = getModelForClass(CommentLikeSchema);
+export const ReplyLike = getModelForClass(ReplyLikeSchema);
+

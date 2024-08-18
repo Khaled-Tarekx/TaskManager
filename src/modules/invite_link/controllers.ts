@@ -1,46 +1,66 @@
 import {NotFound} from '../../../custom-errors/main.js';
-import WorkSpaceMembers, {Role} from '.././work_space_members/models.js';
-import {NextFunction, Request, Response} from 'express';
+import type {NextFunction, Response} from 'express';
 
 import {StatusCodes} from 'http-status-codes';
 import InviteLink from './models.js';
 import {asyncHandler} from '../auth/middleware.js';
-import {createInviteLinkSchema} from './validation.js';
+import type {
+    createInviteSchema,
+    acceptInvitationSchema,
+} from './validation.js';
+import {
+    findResourceById,
+    checkUser,
+} from 'src/setup/helpers.js';
+import {type TypedRequestBody} from 'zod-express-middleware';
+import Members from '../work_space_members/models.js';
+import {Role} from '../work_space_members/types.js';
+import WorkSpace from '../work_spaces/models.js';
+import {isResourceOwner} from '../users/helpers.js';
 
 export const createInviteLink = asyncHandler(
-	async (
-		req: Request<{}, {}, createInviteLinkSchema>,
-		res: Response,
-		next: NextFunction
-	) => {
-		// const baseUrl = `/:workspaceId/invite/`
+    async (req: TypedRequestBody<typeof createInviteSchema>, res: Response) => {
+        const {workspaceId, receiverId} = req.body;
+        const user = req.user;
+        const loggedInUser = await checkUser(user);
+        const workspace = await findResourceById(WorkSpace, workspaceId);
+        await isResourceOwner(loggedInUser.id, workspace.owner.id);
 
-		const {workspaceId, userId} = req.body;
-		const inviteLink = await InviteLink.create({
-			user: userId,
-			workspapce: workspaceId,
-		});
+        const invitation = await InviteLink.create({
+            receiver: receiverId,
+            workspace: workspaceId,
+        });
 
-		if (!inviteLink) {
-			return next(new NotFound('error creating invite link'));
-		}
+        res.status(StatusCodes.OK).json({invitation});
+    }
+);
 
-		const verifiedInviteLink = await InviteLink.findOne({
-			link: inviteLink.path,
-		});
+export const acceptInvitation = asyncHandler(
+    async (
+        req: TypedRequestBody<typeof acceptInvitationSchema>,
+        res: Response,
+        next: NextFunction
+    ) => {
+        const {token} = req.body;
 
-		if (!verifiedInviteLink) {
-			return next(new NotFound('link verification failed'));
-		}
+        const invitation = await InviteLink.findOne({
+            token,
+        });
 
-		if (inviteLink.expiresAt <= inviteLink.createdAt) {
-			return next(new NotFound('invite link already expired'));
-		}
+        if (!invitation) {
+            return next(new NotFound('invitation not found'))
+        }
 
-		// const member = await WorkSpaceMembers.create({ user: verifiedInviteLink.user.id,
-		//    workspace: verifiedInviteLink.workspace.id, role: Role.Member}) // TODO:  accept invite link
-		const relativeUrl = `/${workspaceId}/invite/${inviteLink.path}`;
+        if (invitation.expiresAt <= invitation.createdAt) {
+            return next(new NotFound('invite link already expired'));
+        }
+        
+        const member = await Members.create({
+            member: invitation.receiver.id,
+            workspace: invitation.workspace.id,
+            role: Role.member,
+        });
 
-		res.status(StatusCodes.OK).json({relativeUrl});
-	}
+        res.status(StatusCodes.OK).json({member});
+    }
 );

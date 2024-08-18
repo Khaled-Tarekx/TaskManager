@@ -1,40 +1,36 @@
-import { BadRequest, NotFound } from '../../../custom-errors/main.js';
+import { NotFound } from '../../../custom-errors/main.js';
 import WorkSpaceMembers from './models.js';
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import mongoose from 'mongoose';
 import { asyncHandler } from '../auth/middleware.js';
+import type { TypedRequestBody } from 'zod-express-middleware';
+import { updateMemberSchema } from './validation.js';
+import { isResourceOwner } from '../users/helpers.js';
+import {
+	findResourceById,
+	checkUser,
+	validateObjectIds,
+} from 'src/setup/helpers.js';
+import WorkSpace from '../work_spaces/models.js';
 
 export const getMembersOfWorkSpace = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
+	async (req: Request, res: Response) => {
 		const { workSpaceId } = req.params;
+		validateObjectIds([workSpaceId]);
 		const members = await WorkSpaceMembers.find({
 			workspace: workSpaceId,
-		}).populate('user');
+		}).populate('member');
 		res.status(StatusCodes.OK).json({ data: members, count: members.length });
 	}
 );
 
-export const createMember = asyncHandler(
+export const getMemberByName = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		const { role } = req.body;
-		const member = await WorkSpaceMembers.create(role);
-		res
-			.status(StatusCodes.OK)
-			.json({ message: `created your member successfully `, data: member });
-	}
-);
+		const { username } = req.body;
+		const member = await WorkSpaceMembers.findOne({
+			'member.username': username,
+		});
 
-export const getMember = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const { workspaceId, id } = req.params;
-		if (!mongoose.Types.ObjectId.isValid(id)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
-		if (!mongoose.Types.ObjectId.isValid(workspaceId)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
-		const member = await WorkSpaceMembers.findOne({ workspaceId, id });
 		if (!member) return next(new NotFound(`no member found`));
 
 		res.status(StatusCodes.OK).json({ data: member });
@@ -42,42 +38,44 @@ export const getMember = asyncHandler(
 );
 
 export const updateMemberPermissions = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const { id, workspaceId } = req.params;
-		if (!mongoose.Types.ObjectId.isValid(id)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
-		if (!mongoose.Types.ObjectId.isValid(workspaceId)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
+	async (
+		req: TypedRequestBody<typeof updateMemberSchema>,
+		res: Response,
+		next: NextFunction
+	) => {
+		const { memberId, workSpaceId } = req.params;
+		const user = req.user;
 		const { role } = req.body;
+		validateObjectIds([workSpaceId, memberId]);
+		const loggedInUser = await checkUser(user);
+		const work_space = await findResourceById(WorkSpace, workSpaceId);
+		await isResourceOwner(loggedInUser.id, work_space.owner.id);
+
 		const updatedMember = await WorkSpaceMembers.findOneAndUpdate(
-			{ id, workspaceId },
+			{ memberId, workspace: work_space.id },
 			{ role },
-			{ new: true, context: 'query' }
+			{ new: true }
 		);
 		if (!updatedMember)
 			return next(new NotFound(`no member found with the given id`));
-		res
-			.status(StatusCodes.OK)
-			.json({ message: 'member updated Successfully', data: updatedMember });
+		res.status(StatusCodes.OK).json({ data: updatedMember });
 	}
 );
 
 export const deleteMember = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const { id, workspaceId } = req.params;
-		if (!mongoose.Types.ObjectId.isValid(id)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
-		if (!mongoose.Types.ObjectId.isValid(workspaceId)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
-		const MemberToDelete = await WorkSpaceMembers.findOneAndDelete({
-			workspaceId,
-			id,
+	async (req: Request, res: Response) => {
+		const { memberId, workSpaceId } = req.params;
+		const user = req.user;
+		validateObjectIds([workSpaceId, memberId]);
+		const loggedInUser = await checkUser(user);
+		const workSpace = await findResourceById(WorkSpace, workSpaceId);
+		await isResourceOwner(loggedInUser.id, workSpace.owner.id);
+
+		await WorkSpaceMembers.findOneAndDelete({
+			workspace: workSpace.id,
+			member: memberId,
 		});
-		if (!MemberToDelete) return next(new NotFound(`no member found`));
+
 		res.status(StatusCodes.OK).json({
 			message: 'member Deleted Successfully',
 		});

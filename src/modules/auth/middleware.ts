@@ -1,7 +1,7 @@
-import { ExtractJwt, Strategy, StrategyOptions } from 'passport-jwt';
+import { ExtractJwt, Strategy, type StrategyOptions } from 'passport-jwt';
 import passport from 'passport';
 import User from '../users/models.js';
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import {
 	NotFound,
 	UnAuthenticated,
@@ -40,13 +40,13 @@ type jwtPayload = Record<string, string>;
 export default passport.use(
 	new Strategy(opts, async (jwt_payload: jwtPayload, done) => {
 		try {
-			if (!jwt_payload.id) {
+			if (!jwt_payload['id']) {
 				return done(
 					new UnAuthenticated('Invalid token: subject missing'),
 					false
 				);
 			}
-			const user = await User.findById(jwt_payload.id);
+			const user = await User.findById(jwt_payload['id']);
 			if (!user) {
 				return done(new NotFound('user not found'), false);
 			} else {

@@ -1,13 +1,18 @@
-import { Schema, model } from 'mongoose';
+import { TimeStamps } from '@typegoose/typegoose/lib/defaultClasses';
+import { TaskSchema } from '../tasks/models.js';
+import { getModelForClass, prop, type Ref } from '@typegoose/typegoose';
+import { UserSchema } from '../users/models';
 
-export const CommentSchema: Schema = new Schema(
-	{
-		task: { type: Schema.Types.ObjectId, ref: 'Task', required: true },
-		owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-		context: { type: String, minlength: 1 },
-	},
-	{ timestamps: true }
-);
+export class CommentSchema extends TimeStamps {
+	@prop({ ref: TaskSchema, required: true })
+	public task!: Ref<TaskSchema>;
 
-const Comment = model('Comment', CommentSchema);
-export default Comment;
+	@prop({ ref: UserSchema, required: true })
+	public owner!: Ref<UserSchema>;
+
+	@prop({ type: String, required: true, minlength: 1 })
+	public context!: string;
+}
+
+const CommentModel = getModelForClass(CommentSchema);
+export default CommentModel;

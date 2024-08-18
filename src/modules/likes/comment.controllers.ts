@@ -1,114 +1,83 @@
-import {NextFunction, Request, Response} from 'express';
-import {StatusCodes} from 'http-status-codes';
+import type { Request, Response } from 'express';
+import { StatusCodes } from 'http-status-codes';
+import { CommentLike } from './models.js';
+import { asyncHandler } from '../auth/middleware.js';
+import { createCommentLikeSchema } from './validation.js';
+
 import {
-	NotFound,
-	BadRequest,
-	UnAuthenticated,
-} from '../../../custom-errors/main.js';
-import {CommentLike} from './models.js';
-import mongoose from 'mongoose';
-import {asyncHandler} from '../auth/middleware.js';
-import {createCommentLikeSchema} from './validation.js';
+	checkResource,
+	checkUser,
+	findResourceById,
+	validateObjectIds,
+} from '../../setup/helpers';
+import type { TypedRequestBody } from 'zod-express-middleware';
+import { isResourceOwner } from '../users/helpers.js';
 
 export const getCommentLikes = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const commentLikes = await CommentLike.find({});
+	async (req: Request, res: Response) => {
+		const { commentId } = req.params;
+		validateObjectIds([commentId]);
+		const commentLikes = await CommentLike.find({ reply: commentId });
 		res
 			.status(StatusCodes.OK)
-			.json({data: commentLikes, count: commentLikes.length});
+			.json({ data: commentLikes, count: commentLikes.length });
 	}
 );
 
 export const getCommentLike = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const {id} = req.params;
-		if (!mongoose.Types.ObjectId.isValid(id)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
-		const commentLike = await CommentLike.findById(id);
-		if (!commentLike) {
-			return next(new NotFound('no like found for the given comment'));
-		}
-		res.status(StatusCodes.OK).json({data: commentLike});
-	}
-);
+	// is this even needed?
+	async (req: Request, res: Response) => {
+		const { likeId } = req.params;
+		validateObjectIds([likeId]);
 
-export const getUserCommentLikes = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const user = req.user;
-		if (!user) {
-			return next(new UnAuthenticated('log in first to grant access'));
-		}
-		const userCommentLikes = await CommentLike.find({
-			owner: user.id,
-		});
-		res
-			.status(StatusCodes.OK)
-			.json({data: userCommentLikes, count: userCommentLikes.length});
+		const commentLike = await findResourceById(CommentLike, likeId);
+		res.status(StatusCodes.OK).json({ data: commentLike });
 	}
 );
 
 export const getUserCommentLike = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const {id} = req.params;
+	async (req: Request, res: Response) => {
 		const user = req.user;
-		if (!user) {
-			return next(new UnAuthenticated('log in first to grant access'));
-		}
-
-		if (!mongoose.Types.ObjectId.isValid(id)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
+		const loggedInUser = await checkUser(user);
 		const userCommentLike = await CommentLike.findOne({
-			_id: id,
-			owner: user.id,
+			owner: loggedInUser.id,
 		});
-		if (!userCommentLike) {
-			return next(new NotFound('no like found with the given id'));
-		}
-		res.status(StatusCodes.OK).json({data: userCommentLike});
+		await checkResource(userCommentLike);
+		res.status(StatusCodes.OK).json({ data: userCommentLike });
 	}
 );
 
 export const createCommentLike = asyncHandler(
 	async (
-		req: Request<{}, {}, createCommentLikeSchema>,
-		res: Response,
-		next: NextFunction
+		req: TypedRequestBody<typeof createCommentLikeSchema>,
+		res: Response
 	) => {
 		const user = req.user;
+		const { commentId } = req.body;
+		validateObjectIds([commentId]);
 
-		if (!user) {
-			return next(new UnAuthenticated('log in first to grant access'));
-		}
-		const {comment} = req.body;
+		const loggedInUser = await checkUser(user);
 
-		const commentLike = await CommentLike.create({
-			owner: user.id,
-			comment,
+		const commentLike = CommentLike.create({
+			owner: loggedInUser.id,
+			comment: commentId,
 		});
-		res.status(StatusCodes.CREATED).json({data: commentLike});
+		await checkResource(commentLike);
+		res.status(StatusCodes.CREATED).json({ data: commentLike });
 	}
 );
 
 export const deleteCommentLike = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const {id} = req.params;
-		if (!mongoose.Types.ObjectId.isValid(id)) {
-			return next(new BadRequest('Invalid ID format'));
-		}
-		const commentLikeToDelete = await CommentLike.findByIdAndDelete(id);
+	async (req: Request, res: Response) => {
+		const user = req.user;
+		const { likeId } = req.params;
+		validateObjectIds([likeId]);
+		const loggedInUser = await checkUser(user);
 
-		if (!commentLikeToDelete) {
-			return next(new NotFound('no like found'));
-		}
+		const commentLikeToDelete = await findResourceById(CommentLike, likeId);
 
-		if (req.user !== commentLikeToDelete.owner) {
-			return next(
-				new UnAuthenticated('you only have permission to delete your like')
-			);
-		}
-
-		res.status(StatusCodes.OK).json({msg: 'like deleted successfully'});
+		await isResourceOwner(loggedInUser.id, commentLikeToDelete.owner.id);
+		await CommentLike.findByIdAndDelete(commentLikeToDelete.id);
+		res.status(StatusCodes.OK).json({ msg: 'like deleted successfully' });
 	}
 );

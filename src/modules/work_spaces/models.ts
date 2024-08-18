@@ -1,28 +1,21 @@
-import { model, Schema } from 'mongoose';
+import { getModelForClass, prop, type Ref } from '@typegoose/typegoose';
+import { TimeStamps } from '@typegoose/typegoose/lib/defaultClasses';
+import { MemberSchema } from '../work_space_members/models.js';
+import { Type } from './types.js';
 
-export enum Type {
-	Operation = 'operation',
-	Marketing = 'marketing',
-	SmallBusiness = 'small_business',
-	SalesCrm = 'sales_crm',
-	HumanResources = 'human_resources',
-	ItEngineering = 'it_engineering',
-	Education = 'education',
-	other = 'other',
+export class WorkSpaceSchema extends TimeStamps {
+	@prop({ type: () => String, required: true })
+	public name!: string;
+
+	@prop({ type: () => String })
+	public description?: string;
+
+	@prop({ ref: MemberSchema, required: true })
+	public owner!: Ref<MemberSchema>;
+
+	@prop({ enum: Type, default: Type.other })
+	public type!: Type;
 }
 
-const workSpaceSchema: Schema = new Schema(
-	{
-		name: { type: String, required: true },
-		description: { type: String },
-		type: {
-			type: String,
-			enum: Object.values(Type),
-			default: Type.other,
-		},
-	},
-	{ timestamps: true, strict: true }
-);
-
-const workSpace = model('WorkSpace', workSpaceSchema);
-export default workSpace;
+const WorkSpaceModel = getModelForClass(WorkSpaceSchema);
+export default WorkSpaceModel;

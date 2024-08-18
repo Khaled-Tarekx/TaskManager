@@ -1,30 +1,20 @@
-import mongoose, { Document, model, Schema } from 'mongoose';
+import {getModelForClass, prop, type Ref} from '@typegoose/typegoose';
+import {TimeStamps} from '@typegoose/typegoose/lib/defaultClasses';
+import {WorkSpaceSchema} from '../work_spaces/models.js';
+import {UserSchema} from '../users/models.js';
+import {Role} from './types.js';
 
-export enum Role {
-	Member = 'member',
-	Owner = 'owner',
+export class MemberSchema extends TimeStamps {
+    @prop({ref: WorkSpaceSchema, required: true})
+    public workspace!: Ref<WorkSpaceSchema>;
+
+    @prop({ref: UserSchema, required: true})
+    public member!: Ref<UserSchema>;
+
+    @prop({enum: Role, default: Role.member})
+    public role!: Role;
 }
 
-const workSpaceMembersSchema: Schema = new Schema(
-	{
-		workspace: {
-			type: mongoose.Schema.Types.ObjectId,
-			ref: 'Workspace',
-			required: true,
-		},
-		user: {
-			type: mongoose.Schema.Types.ObjectId,
-			ref: 'User',
-			required: true,
-		},
-		role: {
-			type: String,
-			enum: Object.values(Role),
-			default: Role.Member,
-		},
-	},
-	{ timestamps: true, strict: true }
-);
+export const MemberModel = getModelForClass(MemberSchema);
 
-const workSpaceMembers = model('WorkSpaceMembers', workSpaceMembersSchema);
-export default workSpaceMembers;
+export default MemberModel;

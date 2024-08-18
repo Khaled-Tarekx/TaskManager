@@ -6,20 +6,19 @@ import {
 	deleteUser,
 	updateUserInfo,
 } from './controllers.js';
-import { deleteUserValidation } from './validations.js';
 import { checkRequestUser } from './middlewares.js';
+import { updateUserSchema } from './validations.js';
 
 const router = express.Router();
 
-router.route('/').get(getUsers);
-router
-	.route('/:id')
-	.get(getUser)
-	.patch(updateUserInfo)
-	.delete(
-		checkRequestUser,
-		validateResource({ paramsSchema: deleteUserValidation }),
-		deleteUser
-	);
+router.get('/', getUsers);
+router.get('/:id', getUser);
 
+router.patch(
+	'/update-user',
+	validateResource({ bodySchema: updateUserSchema }),
+	updateUserInfo
+);
+
+router.delete('/update-user', checkRequestUser, deleteUser);
 export default router;

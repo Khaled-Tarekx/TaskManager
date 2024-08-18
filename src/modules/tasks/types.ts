@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { taskSchema, updateTaskSchema } from './validation.js';
+import { createTaskSchema, updateTaskSchema } from './validation.js';
 
 export enum Status {
 	Unassigned = 'unassigned',
@@ -7,14 +7,5 @@ export enum Status {
 	Completed = 'completed',
 }
 
-// const StatusMap = {
-// 	Unassigned: 'unassigned',
-// 	InProgress: 'in_progress',
-// 	Completed: 'completed',
-// } as const;
-
-// type StatusType = typeof StatusMap;
-// type Status = StatusType[keyof StatusType];
-
-export type taskDTO = z.infer<typeof taskSchema>;
+export type createTaskDTO = z.infer<typeof createTaskSchema>;
 export type updateTaskDTO = z.infer<typeof updateTaskSchema>;
