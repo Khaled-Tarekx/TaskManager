@@ -4,5 +4,10 @@ export enum Role {
 	member = 'member',
 	owner = 'owner',
 }
+
+export type deleteMemberParams = {
+	memberId: string;
+	workSpaceId: string;
+};
 export type createMemberDTO = z.infer<typeof createMemberSchema>;
 export type updateMemberDTO = z.infer<typeof updateMemberSchema>;

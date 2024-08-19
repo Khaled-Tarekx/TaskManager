@@ -1,123 +1,92 @@
-import type {Request, Response} from 'express';
-import {StatusCodes} from 'http-status-codes';
-import Comment from './models.js';
-import {asyncHandler} from '../auth/middleware.js';
-import {isResourceOwner} from '../users/helpers.js';
-import {
-    findResourceById,
-    checkUser, validateObjectIds, checkResource,
-} from 'src/setup/helpers.js';
-import type {TypedRequestBody} from 'zod-express-middleware';
+import type { Request, Response } from 'express';
+import { StatusCodes } from 'http-status-codes';
+import { asyncHandler } from '../auth/middleware.js';
+
+import type { TypedRequestBody } from 'zod-express-middleware';
 import type {
-    createCommentSchema,
-    updateCommentSchema,
+	createCommentSchema,
+	updateCommentSchema,
 } from './validation.js';
+import * as CommentServices from './services.js';
 
 export const getTaskComments = asyncHandler(
-    async (req: Request, res: Response) => {
-        const {taskId} = req.params
-        validateObjectIds([taskId])
-        const comments = await Comment.find({task: taskId});
-        res.status(StatusCodes.OK).json({data: comments, count: comments.length});
-    }
+	async (req: Request, res: Response) => {
+		const { taskId } = req.params;
+		const taskComments = await CommentServices.getTaskComments(taskId);
+
+		res
+			.status(StatusCodes.OK)
+			.json({ data: taskComments, count: taskComments.length });
+	}
 );
 
 export const getComment = asyncHandler(
-    async (req: Request, res: Response) => {
-        const {commentId} = req.params;
-        validateObjectIds([commentId])
-        const comment = await findResourceById(Comment, commentId);
-        res.status(StatusCodes.OK).json({data: comment});
-    }
+	async (req: Request, res: Response) => {
+		const { commentId } = req.params;
+		const comment = await CommentServices.getComment(commentId);
+		res.status(StatusCodes.OK).json({ data: comment });
+	}
 );
 
 export const getUserComments = asyncHandler(
-    async (req: Request, res: Response) => {
-        const user = req.user;
-        const loggedInUser = await checkUser(user);
-        const userComments = await Comment.find({
-            owner: loggedInUser.id,
-        });
+	async (req: Request, res: Response) => {
+		const user = req.user;
 
-        res
-            .status(StatusCodes.OK)
-            .json({data: userComments, count: userComments.length});
-    }
+		const userComments = await CommentServices.getUserComments(user);
+
+		res
+			.status(StatusCodes.OK)
+			.json({ data: userComments, count: userComments.length });
+	}
 );
 
 export const getUserComment = asyncHandler(
-    async (req: Request, res: Response) => {
-        const {commentId} = req.params;
-        const user = req.user;
-        validateObjectIds([commentId])
-        const loggedInUser = await checkUser(user);
-        const comment = await Comment.findOne({
-            _id: commentId,
-            owner: loggedInUser.id,
-        });
-        await checkResource(comment)
-
-        res.status(StatusCodes.OK).json({data: comment});
-    }
+	async (req: Request, res: Response) => {
+		const { commentId } = req.params;
+		const user = req.user;
+		const userComment = await CommentServices.getUserComment(commentId, user);
+		res.status(StatusCodes.OK).json({ data: userComment });
+	}
 );
 
 export const createComment = asyncHandler(
-    async (
-        req: TypedRequestBody<typeof createCommentSchema>,
-        res: Response
-    ) => {
-        const {taskId, context} = req.body;
-        validateObjectIds([taskId])
-        const user = req.user;
-        const loggedInUser = await checkUser(user);
+	async (
+		req: TypedRequestBody<typeof createCommentSchema>,
+		res: Response
+	) => {
+		const { taskId, context } = req.body;
+		const user = req.user;
+		const comment = await CommentServices.createComment(
+			{ taskId, context },
+			user
+		);
 
-        const comment = await Comment.create({
-            owner: loggedInUser.id,
-            task: taskId,
-            context,
-        });
-        await checkResource(comment)
-        res.status(StatusCodes.CREATED).json({data: comment});
-    }
+		res.status(StatusCodes.CREATED).json({ data: comment });
+	}
 );
 
-export const editComment = asyncHandler(
-    async (
-        req: TypedRequestBody<typeof updateCommentSchema>,
-        res: Response,
-    ) => {
-        const {commentId} = req.params;
-        const user = req.user;
-        const {context} = req.body;
-        validateObjectIds([commentId])
-        const loggedInUser = await checkUser(user);
-        const comment = await findResourceById(Comment, commentId);
-        await isResourceOwner(loggedInUser.id, comment.owner.id);
+export const editComment = async (
+	req: TypedRequestBody<typeof updateCommentSchema>,
+	res: Response
+) => {
+	const { commentId } = req.params;
+	const user = req.user;
+	const { context } = req.body;
+	const comment = await CommentServices.editComment(
+		{ context },
+		commentId,
+		user
+	);
 
-        const commentToUpdate = await Comment.findByIdAndUpdate(
-            comment.id,
-            {context},
-            {new: true}
-        );
-
-        await checkResource(commentToUpdate)
-
-        res.status(StatusCodes.OK).json({data: commentToUpdate});
-    }
-);
+	res.status(StatusCodes.OK).json({ data: comment });
+};
 
 export const deleteComment = asyncHandler(
-    async (req: Request, res: Response) => {
-        const user = req.user;
-        const {commentId} = req.params;
-        validateObjectIds([commentId])
+	async (req: Request, res: Response) => {
+		const user = req.user;
+		const { commentId } = req.params;
+		const msg = await CommentServices.deleteComment(user, commentId);
 
-        const loggedInUser = await checkUser(user);
-        const comment = await findResourceById(Comment, commentId);
-        await isResourceOwner(loggedInUser.id, comment.owner.id);
-
-        await Comment.findByIdAndDelete(comment.id);
-
-        res.status(StatusCodes.OK).json({msg: 'comment deleted successfully'});
-    }
+		res.status(StatusCodes.OK).json({ msg });
+	}
 );

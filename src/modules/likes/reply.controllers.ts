@@ -1,23 +1,14 @@
 import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { ReplyLike } from './models.js';
 import { asyncHandler } from '../auth/middleware.js';
 import { createReplyLikeSchema } from './validation.js';
 
-import {
-	checkResource,
-	checkUser,
-	findResourceById,
-	validateObjectIds,
-} from '../../setup/helpers';
 import type { TypedRequestBody } from 'zod-express-middleware';
-import { isResourceOwner } from '../users/helpers.js';
-
+import * as ReplyLikeServices from './reply.services.js';
 export const getReplyLikes = asyncHandler(
 	async (req: Request, res: Response) => {
 		const { replyId } = req.params;
-		validateObjectIds([replyId]);
-		const replyLikes = await ReplyLike.find({ reply: replyId });
+		const replyLikes = await ReplyLikeServices.getReplyLikes(replyId);
 		res
 			.status(StatusCodes.OK)
 			.json({ data: replyLikes, count: replyLikes.length });
@@ -25,12 +16,9 @@ export const getReplyLikes = asyncHandler(
 );
 
 export const getReplyLike = asyncHandler(
-	// is this even needed?
 	async (req: Request, res: Response) => {
 		const { likeId } = req.params;
-		validateObjectIds([likeId]);
-
-		const replyLike = await findResourceById(ReplyLike, likeId);
+		const replyLike = await ReplyLikeServices.getReplyLike(likeId);
 		res.status(StatusCodes.OK).json({ data: replyLike });
 	}
 );
@@ -38,11 +26,7 @@ export const getReplyLike = asyncHandler(
 export const getUserReplyLike = asyncHandler(
 	async (req: Request, res: Response) => {
 		const user = req.user;
-		const loggedInUser = await checkUser(user);
-		const userReplyLike = await ReplyLike.findOne({
-			owner: loggedInUser.id,
-		});
-		await checkResource(userReplyLike);
+		const userReplyLike = await ReplyLikeServices.getUserReplyLike(user);
 		res.status(StatusCodes.OK).json({ data: userReplyLike });
 	}
 );
@@ -54,15 +38,10 @@ export const createReplyLike = asyncHandler(
 	) => {
 		const user = req.user;
 		const { replyId } = req.body;
-		validateObjectIds([replyId]);
-
-		const loggedInUser = await checkUser(user);
-
-		const replyLike = ReplyLike.create({
-			owner: loggedInUser.id,
-			reply: replyId,
-		});
-		await checkResource(replyLike);
+		const replyLike = await ReplyLikeServices.createReplyLike(
+			{ replyId },
+			user
+		);
 		res.status(StatusCodes.CREATED).json({ data: replyLike });
 	}
 );
@@ -71,13 +50,8 @@ export const deleteReplyLike = asyncHandler(
 	async (req: Request, res: Response) => {
 		const user = req.user;
 		const { likeId } = req.params;
-		validateObjectIds([likeId]);
-		const loggedInUser = await checkUser(user);
+		const msg = await ReplyLikeServices.deleteReplyLike(likeId, user);
 
-		const replyLikeToDelete = await findResourceById(ReplyLike, likeId);
-
-		await isResourceOwner(loggedInUser.id, replyLikeToDelete.owner.id);
-		await ReplyLike.findByIdAndDelete(replyLikeToDelete.id);
-		res.status(StatusCodes.OK).json({ msg: 'like deleted successfully' });
+		res.status(StatusCodes.OK).json({ msg });
 	}
 );

@@ -1,7 +1,6 @@
 import User, {UserSchema} from '../users/models.js';
 import jwt from 'jsonwebtoken';
 import {CustomError, NotFound} from '../../../custom-errors/main.js';
-import {StatusCodes} from 'http-status-codes';
 import {type AnyZodObject, ZodError} from 'zod';
 import type {NextFunction, Request, Response} from 'express';
 import {asyncHandler} from './middleware.js';
@@ -9,29 +8,23 @@ import {compare} from 'bcrypt';
 import UnAuthenticated from '../../../custom-errors/unauthenticated.js';
 import type {HydratedDocument} from 'mongoose';
 
-const secret: string | undefined = process.env.SECRET_KEY;
-if (!secret) {
-    throw new CustomError('secret not found', 404);
-}
+const secret = process.env.SECRET_KEY;
+
 
 export const createTokenFromUser = async <T>(
     user: T extends HydratedDocument<UserSchema>
         ? T
         : HydratedDocument<UserSchema>
 ) => {
-    try {
-        const tokenUser = await User.findOne({email: user.email});
+    const tokenUser = await User.findOne({email: user.email});
 
-        if (!tokenUser) {
-            throw new NotFound('User not found');
-        }
-
-        return jwt.sign({id: tokenUser._id, roles: tokenUser.roles}, secret, {
-            expiresIn: '1d',
-        });
-    } catch (err: any) {
-        throw new CustomError(err.message, StatusCodes.BAD_REQUEST);
+    if (!tokenUser) {
+        throw new NotFound('User not found');
     }
+
+    return jwt.sign({id: tokenUser._id, roles: tokenUser.roles}, secret, {
+        expiresIn: '1d',
+    });
 };
 
 type zodSchema = {

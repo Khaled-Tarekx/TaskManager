@@ -6,6 +6,7 @@ export enum Status {
 	InProgress = 'in_progress',
 	Completed = 'completed',
 }
+export type assignTaskParams = { taskId: string; workerId: string };
 
 export type createTaskDTO = z.infer<typeof createTaskSchema>;
 export type updateTaskDTO = z.infer<typeof updateTaskSchema>;
