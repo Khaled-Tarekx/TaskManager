@@ -72,10 +72,9 @@ export const checkResource = async <T>(
     return resource;
 };
 
-export const validateObjectIds = (ids: string[]): boolean => {
+export const validateObjectIds = (ids: string[]) => {
     const isValidIds = ids.every((id) => Types.ObjectId.isValid(id));
-    if (isValidIds === false) {
+    if (!isValidIds) {
         throw new BadRequest('Invalid Object Id');
     }
-    return true;
 };

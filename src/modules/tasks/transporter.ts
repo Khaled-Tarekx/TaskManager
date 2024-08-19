@@ -16,7 +16,10 @@ transporter.verify((error: Error | null, success: boolean) => {
 	if (error) {
 		console.log(error.message);
 	} else {
-		console.log('Server is ready to take our messages');
+		console.log(
+			`success: ${success}`,
+			'Server is ready to take our messages'
+		);
 	}
 });
 

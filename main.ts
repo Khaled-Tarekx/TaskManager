@@ -16,11 +16,8 @@ import connectWithRetry from './database/connection.js';
 import cors from 'cors';
 import Redis from 'redis';
 import { getTasksPage } from './src/modules/tasks/controllers.js';
-import CustomError from 'custom-errors/custom-error.js';
-const secret: string | undefined = process.env.SECRET_KEY;
-if (!secret) {
-	throw new CustomError('secret isnt provided', 404);
-}
+
+const secret = process.env.SECRET_KEY;
 
 export const client = Redis.createClient();
 
@@ -50,24 +47,22 @@ app.get('/tasks', getTasksPage);
 app.set('view engine', 'ejs');
 
 app.use('/uploads', express.static('uploads'));
-app.use('/api/users', authentication, UserRouter);
-app.use('/api/workSpaces', authentication, WorkSpaceRouter);
-app.use('/api/workSpaces', authentication, MembersRouter);
-app.use('/api/tasks', authentication, TaskRouter);
-app.use('/api/comments', authentication, CommentRouter);
-app.use('/api/replies', authentication, ReplyRouter);
-app.use('/api/likes', authentication, LikeRouter);
+app.use(authentication);
+app.use('/api/users', UserRouter);
+app.use('/api/workSpaces', WorkSpaceRouter);
+app.use('/api/workSpaces', MembersRouter);
+app.use('/api/tasks', TaskRouter);
+app.use('/api/comments', CommentRouter);
+app.use('/api/replies', ReplyRouter);
+app.use('/api/likes', LikeRouter);
 app.use(ErrorHandler);
 
 connectWithRetry().then(() => {
 	console.log('reached main file');
 });
 
-const port: string | undefined = process.env.PORT;
+const port = process.env.PORT;
 
-if (!port) {
-	throw new CustomError('port isnt provided', 404);
-}
 app.listen(port, () => {
 	console.log(`app is listening on port ${port}`);
 });
