@@ -8,11 +8,9 @@ import {
 	CustomError,
 } from '../../../custom-errors/main.js';
 import { StatusCodes } from 'http-status-codes';
+import type { Roles } from './types.js';
 
-const secret: string | undefined = process.env.SECRET_KEY;
-if (!secret) {
-	throw new NotFound('no secret found');
-}
+const secret = process.env.SECRET_KEY;
 
 const opts: StrategyOptions = {
 	jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -35,18 +33,21 @@ passport.deserializeUser(async (id, done) => {
 	}
 });
 
-type jwtPayload = Record<string, string>;
+type jwtPayload = {
+	id: string;
+	roles: Roles;
+};
 
 export default passport.use(
 	new Strategy(opts, async (jwt_payload: jwtPayload, done) => {
 		try {
-			if (!jwt_payload['id']) {
+			if (!jwt_payload.id) {
 				return done(
 					new UnAuthenticated('Invalid token: subject missing'),
 					false
 				);
 			}
-			const user = await User.findById(jwt_payload['id']);
+			const user = await User.findById(jwt_payload.id);
 			if (!user) {
 				return done(new NotFound('user not found'), false);
 			} else {

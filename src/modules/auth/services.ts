@@ -3,14 +3,17 @@ import User from '../users/models';
 import { checkResource } from 'src/setup/helpers';
 import { comparePassword, createTokenFromUser } from './utillities';
 import { UnAuthenticated } from 'custom-errors/main';
+import { hash } from 'bcrypt';
+
+const saltRounds = process.env.SALT_ROUNTS;
 
 export const createUser = async (userData: createUserDTO) => {
 	const { username, email, password, position } = userData;
-
+	const hashedPassword = await hash(password, saltRounds);
 	const user = await User.create({
 		username,
 		email,
-		password,
+		password: hashedPassword,
 		position,
 	});
 	const validatedResource = await checkResource(user);
