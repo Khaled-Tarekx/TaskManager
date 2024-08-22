@@ -27,7 +27,7 @@ export const login = asyncHandler(
 			password,
 		});
 
-		res.status(StatusCodes.CREATED).json({ data: token });
-	}	
+		res.status(StatusCodes.CREATED).json({ token });
+	}
 );
 console.log('tata');

@@ -5,6 +5,7 @@ import { createReplyLikeSchema } from './validation';
 
 import type { TypedRequestBody } from 'zod-express-middleware';
 import * as ReplyLikeServices from './reply.services';
+import { ReplyLike } from './models';
 
 export const getReplyLikes = asyncHandler(
 	async (req: Request, res: Response) => {
@@ -26,8 +27,12 @@ export const getReplyLike = asyncHandler(
 
 export const getUserReplyLike = asyncHandler(
 	async (req: Request, res: Response) => {
+		const { replyId } = req.params;
 		const user = req.user;
-		const userReplyLike = await ReplyLikeServices.getUserReplyLike(user);
+		const userReplyLike = await ReplyLikeServices.getUserReplyLike(
+			user,
+			replyId
+		);
 		res.status(StatusCodes.OK).json({ data: userReplyLike });
 	}
 );

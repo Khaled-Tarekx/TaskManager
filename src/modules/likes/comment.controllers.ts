@@ -5,6 +5,7 @@ import { createCommentLikeSchema } from './validation';
 
 import type { TypedRequestBody } from 'zod-express-middleware';
 import * as CommentLikeServices from './comment.services';
+
 export const getCommentLikes = asyncHandler(
 	async (req: Request, res: Response) => {
 		const { commentId } = req.params;
@@ -12,14 +13,6 @@ export const getCommentLikes = asyncHandler(
 		res
 			.status(StatusCodes.OK)
 			.json({ data: commentLikes, count: commentLikes.length });
-	}
-);
-
-export const getCommentLike = asyncHandler(
-	async (req: Request, res: Response) => {
-		const { likeId } = req.params;
-		const commentLike = await CommentLikeServices.getCommentLike(likeId);
-		res.status(StatusCodes.OK).json({ data: commentLike });
 	}
 );
 

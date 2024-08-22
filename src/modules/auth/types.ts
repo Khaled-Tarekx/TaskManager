@@ -1,14 +1,14 @@
-import type {z} from 'zod';
-import type {createUserSchema, loginSchema} from './validation';
+import type { z } from 'zod';
+import type { createUserSchema, loginSchema } from './validation';
 
 export enum Roles {
-    user = 'user',
-    admin = 'admin',
+	user = 'user',
+	admin = 'admin',
 }
 
 export enum Position {
-    front_end = 'front-end',
-    back_end = 'back-end',
+	front_end = 'Front-End',
+	back_end = 'Back-End',
 }
 
 export type createUserDTO = z.infer<typeof createUserSchema>;

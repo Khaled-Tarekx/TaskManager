@@ -1,5 +1,5 @@
-import {getModelForClass, modelOptions, prop} from '@typegoose/typegoose';
-import { Position, Roles } from './types';
+import { getModelForClass, modelOptions, prop } from '@typegoose/typegoose';
+import { Position, Roles } from '../auth/types';
 
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class UserSchema {

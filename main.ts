@@ -9,8 +9,9 @@ import TaskRouter from './src/modules/tasks/routes';
 import CommentRouter from './src/modules/comments/routes';
 import ReplyRouter from './src/modules/replies/routes';
 import LikeRouter from './src/modules/likes/routes';
-import WorkSpaceRouter from './src/modules/work_spaces/routes';
-import MembersRouter from './src/modules/work_spaces/work_space_members/routes';
+import InvitationRouter from './src/modules/invite_link/routes';
+import WorkSpaceRouter from './src/modules/workspaces/routes';
+import MembersRouter from './src/modules/workspaces/workspace_members/routes';
 import swaggerUi from 'swagger-ui-express';
 
 import passport from './src/modules/auth/middleware';
@@ -19,18 +20,17 @@ import cors from 'cors';
 import Redis from 'redis';
 import { getTasksPage } from './src/modules/tasks/controllers';
 import swaggerSpec from './src/setup/swagger';
+import { Console } from 'console';
 
 const secret = process.env.SECRET_KEY;
 
 export const client = Redis.createClient();
 
 client.on('error', (err) => console.log('Redis Client Error', err));
-console.log('alo');
 // await client.connect();
-console.log('older mamaa');
+
 const app = express();
 const authentication = passport.authenticate('jwt');
-
 app.use(express.json());
 app.use(cors());
 app.use(
@@ -42,7 +42,7 @@ app.use(
 	})
 );
 
-app.use('/', AuthRouter);
+app.use('/api/v1', AuthRouter);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(passport.initialize());
@@ -53,13 +53,14 @@ app.set('view engine', 'ejs');
 app.use('/uploads', express.static('uploads'));
 
 app.use(authentication);
-app.use('/api/users', UserRouter);
-app.use('/api/workSpaces', WorkSpaceRouter);
-app.use('/api/workSpaces', MembersRouter);
-app.use('/api/tasks', TaskRouter);
-app.use('/api/comments', CommentRouter);
-app.use('/api/replies', ReplyRouter);
-app.use('/api/likes', LikeRouter);
+app.use('/api/v1/users', UserRouter);
+app.use('/api/v1/workSpaces', WorkSpaceRouter);
+app.use('/api/v1/workSpaces', MembersRouter);
+app.use('/api/v1/tasks', TaskRouter);
+app.use('/api/v1/invitation', InvitationRouter);
+app.use('/api/v1/comments', CommentRouter);
+app.use('/api/v1/replies', ReplyRouter);
+app.use('/api/v1/likes', LikeRouter);
 app.use(ErrorHandler);
 
 connectWithRetry().then(() => {

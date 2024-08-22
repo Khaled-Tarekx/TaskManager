@@ -6,7 +6,7 @@ import {
 } from '@typegoose/typegoose';
 import { Type } from './types';
 import { UserSchema } from '../users/models';
-import { Role } from './work_space_members/types';
+import { Role } from './workspace_members/types';
 
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class WorkSpaceSchema {

@@ -19,11 +19,12 @@ router.post(
 	validateResource({ bodySchema: createCommentSchema }),
 	createComment
 );
+router.route('/me/:commentId').get(getUserComment);
 
 router.route('/me').get(getUserComments);
-router.route('/me/:id').get(getUserComment);
+
 router
-	.route('/:id')
+	.route('/:commentId')
 	.get(getComment)
 	.patch(
 		validateResource({

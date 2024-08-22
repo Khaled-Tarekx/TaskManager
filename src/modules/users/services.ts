@@ -10,21 +10,24 @@ import {
 import type { updateUserDTO } from './types';
 
 export const getUsers = async () => {
-	return User.find({});
+	return User.find({}).select(' -password');
 };
 
 export const getUser = async (userId: string) => {
-	validateObjectIds([userId]);
-	return findResourceById(User, userId);
+	try {
+		validateObjectIds([userId]);
+		return findResourceById(User, userId);
+	} catch (err: any) {
+		throw new Forbidden(err.message);
+	}
 };
 
 export const updateUserInfo = async (
 	updateData: updateUserDTO,
 	user: Express.User | undefined
 ) => {
-	const loggedInUser = await checkUser(user);
-
 	try {
+		const loggedInUser = await checkUser(user);
 		const updatedUser = await User.findByIdAndUpdate(
 			loggedInUser.id,
 			{ email: updateData.email, username: updateData.username },
@@ -37,9 +40,13 @@ export const updateUserInfo = async (
 };
 
 export const deleteUser = async (user: Express.User | undefined) => {
-	const loggedInUser = await checkUser(user);
-	const userToDelete = await findResourceById(User, loggedInUser.id);
+	try {
+		const loggedInUser = await checkUser(user);
+		const userToDelete = await findResourceById(User, loggedInUser.id);
 
-	await User.findByIdAndDelete(userToDelete.id);
-	return 'User Deleted Successfully';
+		await User.findByIdAndDelete(userToDelete.id);
+		return 'User Deleted Successfully';
+	} catch (err: any) {
+		throw new Forbidden(err.message);
+	}
 };

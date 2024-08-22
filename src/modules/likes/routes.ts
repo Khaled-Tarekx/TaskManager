@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import {
-	getCommentLike,
 	getCommentLikes,
 	createCommentLike,
 	getUserCommentLike,
@@ -18,24 +17,27 @@ import { createCommentLikeSchema, createReplyLikeSchema } from './validation';
 import { validateResource } from '../auth/utillities';
 
 const router = Router();
-router
-	.route('/comments')
-	.get(getCommentLikes)
-	.post(
-		validateResource({ bodySchema: createCommentLikeSchema }),
-		createCommentLike
-	);
-router.route('/comments/me/:id').get(getUserCommentLike);
-router.route('/comments/:id').get(getCommentLike).delete(deleteCommentLike);
+router.get('/comments/:commentId', getCommentLikes);
 
-router
-	.route('/replies')
-	.get(getReplyLikes)
-	.post(
-		validateResource({ bodySchema: createReplyLikeSchema }),
-		createReplyLike
-	);
-router.route('/replies/me/').get(getUserReplyLike);
-router.route('/replies/:id').get(getReplyLike).delete(deleteReplyLike);
+router.delete('/comments/:likeId', deleteCommentLike);
+
+router.post(
+	'/comments',
+	validateResource({ bodySchema: createCommentLikeSchema }),
+	createCommentLike
+);
+router.route('/comments/me/:commentId').get(getUserCommentLike);
+
+router.get('/replies/:replyId', getReplyLikes);
+
+router.delete('/replies/:likeId', deleteReplyLike);
+
+router.post(
+	'/replies',
+	validateResource({ bodySchema: createReplyLikeSchema }),
+	createReplyLike
+);
+router.route('/replies/me/:replyId').get(getUserReplyLike);
+// router.get('/replies/:replyId', getReplyLike); // TODO:  is this necessary?
 
 export default router;

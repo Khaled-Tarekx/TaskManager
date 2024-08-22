@@ -61,9 +61,9 @@ export const validateResource = ({
 						issue.path,
 						issue.message,
 					]);
-					next(new CustomError(errorMessages.join(', '), 422));
+					return next(new CustomError(errorMessages.join(', '), 422));
 				} else {
-					next(new CustomError(err.message, 422));
+					return next(new CustomError(err.message, 422));
 				}
 			}
 		}

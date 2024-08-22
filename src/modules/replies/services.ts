@@ -9,6 +9,7 @@ import {
 import type { createReplyDTO, updateReplyDTO } from './types';
 import Reply from './models';
 import Comment from '../comments/models';
+import { Forbidden } from '../../custom-errors/main';
 
 export const getReplies = async () => {
 	return Reply.find({});
@@ -18,9 +19,13 @@ export const getCommentReplies = async (commentId: string) => {
 };
 
 export const getReply = async (replyId: string) => {
-	validateObjectIds([replyId]);
-	const reply = await findResourceById(Reply, replyId);
-	return checkResource(reply);
+	try {
+		validateObjectIds([replyId]);
+		const reply = await findResourceById(Reply, replyId);
+		return checkResource(reply);
+	} catch (err: any) {
+		throw new Forbidden(err.message);
+	}
 };
 
 export const getUserReplies = async (user: Express.User | undefined) => {
@@ -34,13 +39,17 @@ export const getUserReply = async (
 	replyId: string,
 	user: Express.User | undefined
 ) => {
-	validateObjectIds([replyId]);
-	const loggedInUser = await checkUser(user);
-	const reply = await Reply.findOne({
-		_id: replyId,
-		owner: loggedInUser.id,
-	});
-	return checkResource(reply);
+	try {
+		validateObjectIds([replyId]);
+		const loggedInUser = await checkUser(user);
+		const reply = await Reply.findOne({
+			_id: replyId,
+			owner: loggedInUser.id,
+		});
+		return checkResource(reply);
+	} catch (err: any) {
+		throw new Forbidden(err.message);
+	}
 };
 
 export const createReply = async (
@@ -48,19 +57,23 @@ export const createReply = async (
 	user: Express.User | undefined
 ) => {
 	const { comment, parentReply, repliesOfReply, context } = replyData;
-	const loggedInUser = await checkUser(user);
-	const reply = await Reply.create({
-		comment,
-		owner: loggedInUser.id,
-		parentReply,
-		repliesOfReply,
-		context,
-	});
-	const commentData = await Comment.findByIdAndUpdate(reply.comment.id, {
-		$inc: { replyCount: 1 },
-	});
-	await checkResource(commentData);
-	return checkResource(reply);
+	try {
+		const loggedInUser = await checkUser(user);
+		const reply = await Reply.create({
+			comment,
+			owner: loggedInUser.id,
+			parentReply,
+			repliesOfReply,
+			context,
+		});
+		const commentData = await Comment.findByIdAndUpdate(reply.comment.id, {
+			$inc: { replyCount: 1 },
+		});
+		await checkResource(commentData);
+		return checkResource(reply);
+	} catch (err: any) {
+		throw new Forbidden(err.message);
+	}
 };
 
 export const editReply = async (
@@ -69,34 +82,42 @@ export const editReply = async (
 	user: Express.User | undefined
 ) => {
 	const { context } = replyData;
-	validateObjectIds([replyId]);
-	const loggedInUser = await checkUser(user);
-	const reply = await findResourceById(Reply, replyId);
-	await isResourceOwner(loggedInUser.id, reply.owner.id);
+	try {
+		validateObjectIds([replyId]);
+		const loggedInUser = await checkUser(user);
+		const reply = await findResourceById(Reply, replyId);
+		await isResourceOwner(loggedInUser.id, reply.owner.id);
 
-	const replyToUpdate = await Reply.findByIdAndUpdate(
-		reply.id,
-		{ context },
-		{ new: true }
-	);
+		const replyToUpdate = await Reply.findByIdAndUpdate(
+			reply.id,
+			{ context },
+			{ new: true }
+		);
 
-	return checkResource(replyToUpdate);
+		return checkResource(replyToUpdate);
+	} catch (err: any) {
+		throw new Forbidden(err.message);
+	}
 };
 
 export const deleteReply = async (
 	user: Express.User | undefined,
 	replyId: string
 ) => {
-	validateObjectIds([replyId]);
+	try {
+		validateObjectIds([replyId]);
 
-	const loggedInUser = await checkUser(user);
-	const reply = await findResourceById(Reply, replyId);
-	await isResourceOwner(loggedInUser.id, reply.owner.id);
-	const comment = await Comment.findByIdAndUpdate(reply.comment.id, {
-		$inc: { replyCount: -1 },
-	});
-	await checkResource(comment);
-	await Reply.findByIdAndDelete(reply.id);
+		const loggedInUser = await checkUser(user);
+		const reply = await findResourceById(Reply, replyId);
+		await isResourceOwner(loggedInUser.id, reply.owner.id);
+		const comment = await Comment.findByIdAndUpdate(reply.comment.id, {
+			$inc: { replyCount: -1 },
+		});
+		await checkResource(comment);
+		await Reply.findByIdAndDelete(reply.id);
 
-	return 'reply deleted successfully';
+		return 'reply deleted successfully';
+	} catch (err: any) {
+		throw new Forbidden(err.message);
+	}
 };

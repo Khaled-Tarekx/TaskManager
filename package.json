@@ -4,9 +4,8 @@
   "description": "",
   "main": "main.ts",
   "scripts": {
-    "build": "tsc && resolve-tspaths",
-    "dev": "npm run build && npm start",
-    "start": "node ./dist/main.js"
+    "dev": "nodemon --exec npm start",
+    "start": "tsc && resolve-tspaths && node ./dist/main.js"
   },
   "type": "module",
   "repository": {

@@ -17,14 +17,13 @@ router
 	.route('/')
 	.get(getReplies)
 	.post(validateResource({ bodySchema: createReplySchema }), createReply);
-
-router.get('/:commentId', getCommentReplies);
+router.get('/me/:replyId', getUserReply);
 
 router.get('/me', getUserReplies);
-router.get('/me/:id', getUserReply);
+router.get('/:commentId', getCommentReplies);
 
 router
-	.route('/:id')
+	.route('/:replyId')
 	.get(getReply)
 	.patch(validateResource({ bodySchema: updateReplySchema }), editReply)
 	.delete(deleteReply);

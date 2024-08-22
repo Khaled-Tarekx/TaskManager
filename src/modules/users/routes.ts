@@ -6,7 +6,7 @@ import { updateUserSchema } from './validations';
 const router = express.Router();
 
 router.get('/', getUsers);
-router.get('/:id', getUser);
+router.get('/:userId', getUser);
 
 router.patch(
 	'/update-user',
@@ -14,5 +14,5 @@ router.patch(
 	updateUserInfo
 );
 
-router.delete('/update-user', deleteUser);
+router.delete('/delete-user', deleteUser);
 export default router;

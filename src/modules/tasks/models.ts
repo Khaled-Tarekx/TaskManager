@@ -1,8 +1,8 @@
 import {getModelForClass, modelOptions, prop, type Ref} from '@typegoose/typegoose';
 import { Types } from 'mongoose';
 import { Status } from './types';
-import { WorkSpaceSchema } from '../work_spaces/models';
-import { MemberSchema } from '../work_spaces/models';
+import { WorkSpaceSchema } from '../workspaces/models';
+import { MemberSchema } from '../workspaces/models';
 import { nanoid } from 'nanoid';
 
 @modelOptions({ schemaOptions: { timestamps: true } })

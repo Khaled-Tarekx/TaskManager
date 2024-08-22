@@ -36,6 +36,7 @@ export const mongooseId = z.custom<string>(
 		message: 'id is not valid mongoose id ',
 	}
 );
+
 // export const findResourceById = async <T extends AnyParamConstructor<any>>(
 // 	model: ReturnModelType<T>,
 // 	id: string | undefined

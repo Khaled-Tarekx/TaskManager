@@ -1,5 +1,5 @@
 import z from 'zod';
-import { Position, Roles } from '../users/types';
+import { Position, Roles } from './types';
 
 const regexString = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
