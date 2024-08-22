@@ -4,10 +4,9 @@
   "description": "",
   "main": "main.ts",
   "scripts": {
-    "build": "tsc > /dev/null 2>&1",
-    "start": "nodemon  main.ts",
-    "preinstall": "npm i nodemon -g",
-    "build-and-run": "npm run build && npm start"
+    "b": "tsc && resolve-tspaths",
+    "dev": "npm run build && npm start",
+    "start": "node ./dist/main.js"
   },
   "type": "module",
   "repository": {
@@ -41,7 +40,6 @@
     "multer": "^1.4.5-lts.1",
     "nanoid": "^5.0.7",
     "nodemailer": "^6.9.13",
-    "nodemon": "^3.1.4",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "redis": "^4.6.15",
@@ -49,7 +47,6 @@
     "resolve-tspaths": "^0.8.19",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.10",
     "uuid": "^10.0.0",
     "zod": "^3.24.0-canary.20240701T200529",
