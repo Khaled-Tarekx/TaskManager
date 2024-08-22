@@ -28,6 +28,6 @@ export const login = asyncHandler(
 		});
 
 		res.status(StatusCodes.CREATED).json({ data: token });
-	}
+	}	
 );
 console.log('tata');

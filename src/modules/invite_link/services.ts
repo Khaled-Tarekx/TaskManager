@@ -5,9 +5,8 @@ import {
 	checkUser,
 	checkResource,
 } from '../../setup/helpers';
-import Members from '../work_space_members/models';
 import { Role } from '../work_space_members/types';
-import WorkSpace from '../work_spaces/models';
+import { WorkSpace, Member } from '../work_spaces/models';
 import { isResourceOwner } from '../users/helpers';
 import type { acceptInviteDTO, createInviteDTO } from './types';
 
@@ -38,7 +37,7 @@ export const acceptInvitation = async (token: acceptInviteDTO) => {
 		throw new NotFound('invite link already expired');
 	}
 
-	const member = await Members.create({
+	const member = await Member.create({
 		member: validatedResource.receiver.id,
 		workspace: validatedResource.workspace.id,
 		role: Role.member,

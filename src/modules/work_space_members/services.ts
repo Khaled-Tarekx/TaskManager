@@ -1,26 +1,19 @@
-import { NotFound } from '../../custom-errors/main';
-import WorkSpaceMembers from './models';
-import { isResourceOwner } from '../users/helpers';
-import {
-	findResourceById,
-	checkUser,
-	validateObjectIds,
-	checkResource,
-} from '../../setup/helpers';
-import WorkSpace from '../work_spaces/models';
-import type { deleteMemberParams } from './types';
+import {NotFound} from '../../custom-errors/main';
+import {Member, WorkSpace} from '../work_spaces/models';
+import {isResourceOwner} from '../users/helpers';
+import {checkResource, checkUser, findResourceById, validateObjectIds,} from '../../setup/helpers';
+import type {deleteMemberParams} from './types';
 
 export const getMembersOfWorkSpace = async (workSpaceId: string) => {
 	validateObjectIds([workSpaceId]);
-	const members = await WorkSpaceMembers.find({
+
+	return Member.find({
 		workspace: workSpaceId,
 	}).populate('member');
-
-	return members;
 };
 
 export const getMemberByUsername = async <T>(username: T) => {
-	const member = await WorkSpaceMembers.findOne({
+	const member = await Member.findOne({
 		'member.username': username,
 	});
 
@@ -39,7 +32,7 @@ export const updateMemberPermissions = async (
 	const work_space = await findResourceById(WorkSpace, workSpaceId);
 	await isResourceOwner(loggedInUser.id, work_space.owner.id);
 
-	const updatedMember = await WorkSpaceMembers.findOneAndUpdate(
+	const updatedMember = await Member.findOneAndUpdate(
 		{ memberId, workspace: work_space.id },
 		{ role },
 		{ new: true }
@@ -58,7 +51,7 @@ export const deleteMember = async (
 	const workSpace = await findResourceById(WorkSpace, workSpaceId);
 	await isResourceOwner(loggedInUser.id, workSpace.owner.id);
 
-	await WorkSpaceMembers.findOneAndDelete({
+	await Member.findOneAndDelete({
 		workspace: workSpace.id,
 		member: memberId,
 	});

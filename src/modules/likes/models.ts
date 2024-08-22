@@ -1,10 +1,10 @@
-import { getModelForClass, prop, type Ref } from '@typegoose/typegoose';
+import {getModelForClass, modelOptions, prop, type Ref} from '@typegoose/typegoose';
 import { CommentSchema } from '../comments/models';
 import { UserSchema } from '../users/models';
-import { TimeStamps } from '@typegoose/typegoose/lib/defaultClasses';
 import { ReplySchema } from '../replies/models';
 
-class CommentLikeSchema extends TimeStamps {
+@modelOptions({ schemaOptions: { timestamps: true } })
+class CommentLikeSchema {
 	@prop({ ref: () => CommentSchema, required: true })
 	public comment!: Ref<CommentSchema>;
 
@@ -12,7 +12,7 @@ class CommentLikeSchema extends TimeStamps {
 	public owner!: Ref<UserSchema>;
 }
 
-class ReplyLikeSchema extends TimeStamps {
+class ReplyLikeSchema {
 	@prop({ ref: () => ReplySchema, required: true })
 	public reply!: Ref<ReplySchema>;
 

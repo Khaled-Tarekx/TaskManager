@@ -1,12 +1,12 @@
-import { getModelForClass, prop, type Ref } from '@typegoose/typegoose';
-import { TimeStamps } from '@typegoose/typegoose/lib/defaultClasses';
+import {getModelForClass, modelOptions, prop, type Ref} from '@typegoose/typegoose';
 import { Types } from 'mongoose';
 import { Status } from './types';
 import { WorkSpaceSchema } from '../work_spaces/models';
-import { MemberSchema } from '../work_space_members/models';
+import { MemberSchema } from '../work_spaces/models';
 import { nanoid } from 'nanoid';
 
-export class TaskSchema extends TimeStamps {
+@modelOptions({ schemaOptions: { timestamps: true } })
+export class TaskSchema{
 	@prop({ type: String, unique: true, default: () => nanoid(10) })
 	public publicId?: string;
 

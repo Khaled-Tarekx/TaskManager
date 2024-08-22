@@ -1,10 +1,10 @@
-import { prop, type Ref, getModelForClass } from '@typegoose/typegoose';
+import {prop, type Ref, getModelForClass, modelOptions} from '@typegoose/typegoose';
 
-import { TimeStamps } from '@typegoose/typegoose/lib/defaultClasses';
 import { CommentSchema } from '../comments/models';
 import { UserSchema } from '../users/models';
 
-export class ReplySchema extends TimeStamps {
+@modelOptions({ schemaOptions: { timestamps: true } })
+export class ReplySchema {
 	@prop({ ref: () => CommentSchema, required: true })
 	public comment!: Ref<CommentSchema>;
 

@@ -4,7 +4,7 @@ import { TaskSchema } from './models';
 import { BadRequest } from '../../custom-errors/main';
 import emailQueue from './queue';
 import { findResourceById } from '../../setup/helpers';
-import Member from '../work_space_members/models';
+import { Member } from '../work_spaces/models';
 
 export const notifyUserOfUpcomingDeadline = async (task: TaskSchema) => {
 	const currentTime = moment(new Date());

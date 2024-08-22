@@ -1,8 +1,8 @@
-import { getModelForClass, prop } from '@typegoose/typegoose';
-import { TimeStamps } from '@typegoose/typegoose/lib/defaultClasses';
+import {getModelForClass, modelOptions, prop} from '@typegoose/typegoose';
 import { Position, Roles } from './types';
 
-export class UserSchema extends TimeStamps {
+@modelOptions({ schemaOptions: { timestamps: true } })
+export class UserSchema {
 	@prop({ type: () => String, required: true })
 	public username!: string;
 
