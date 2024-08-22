@@ -1,5 +1,4 @@
-import WorkSpace from './models';
-import WorkSpaceMembers from '../work_space_members/models';
+import { WorkSpace, Member } from './models';
 
 import { isResourceOwner } from '../users/helpers';
 import {
@@ -23,7 +22,7 @@ export const createWorkSpace = async (
 
 	const loggedInUser = await checkUser(user);
 
-	const workSpaceOwner = new WorkSpaceMembers({
+	const workSpaceOwner = new Member({
 		role: Role.owner,
 		member: loggedInUser.id,
 		description,

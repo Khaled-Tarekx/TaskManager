@@ -16,7 +16,7 @@ import {
 	type createTaskDTO,
 	type updateTaskDTO,
 } from './types';
-import Member from '../work_space_members/models';
+import { Member } from '../work_spaces/models';
 
 export const getTasks = async () => {
 	return getOrSetCache('tasks', Task, (model) => model.find({}));

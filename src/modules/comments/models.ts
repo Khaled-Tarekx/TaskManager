@@ -1,9 +1,9 @@
-import { TimeStamps } from '@typegoose/typegoose/lib/defaultClasses';
 import { TaskSchema } from '../tasks/models';
-import { getModelForClass, prop, type Ref } from '@typegoose/typegoose';
+import { getModelForClass, prop, type Ref, modelOptions } from '@typegoose/typegoose';
 import { UserSchema } from '../users/models';
 
-export class CommentSchema extends TimeStamps {
+@modelOptions({ schemaOptions: { timestamps: true } })
+export class CommentSchema {
 	@prop({ ref: TaskSchema, required: true })
 	public task!: Ref<TaskSchema>;
 
