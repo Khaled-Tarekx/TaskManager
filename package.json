@@ -4,8 +4,8 @@
   "description": "",
   "main": "main.ts",
   "scripts": {
-    "b": "tsc && resolve-tspaths",
-    "dev": "npm run build && npm start",
+    "build": "tsc && resolve-tspaths",
+    "dev": "nodemon --exec bun run build && npm start",
     "start": "node ./dist/main.js"
   },
   "type": "module",
@@ -40,6 +40,7 @@
     "multer": "^1.4.5-lts.1",
     "nanoid": "^5.0.7",
     "nodemailer": "^6.9.13",
+    "nodemon": "^3.1.4",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "redis": "^4.6.15",
