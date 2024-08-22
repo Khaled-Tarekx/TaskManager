@@ -1,4 +1,4 @@
-import { ReplyLike } from './models.js';
+import { ReplyLike } from './models';
 
 import {
 	checkResource,
@@ -6,8 +6,10 @@ import {
 	findResourceById,
 	validateObjectIds,
 } from '../../setup/helpers';
-import { isResourceOwner } from '../users/helpers.js';
-import type { ReplyLikeDTO } from './types.js';
+import { isResourceOwner } from '../users/helpers';
+import type { ReplyLikeDTO } from './types';
+
+import Reply from '../replies/models';
 
 export const getReplyLikes = async (replyId: string) => {
 	validateObjectIds([replyId]);
@@ -37,10 +39,14 @@ export const createReplyLike = async (
 
 	const loggedInUser = await checkUser(user);
 
-	const replyLike = ReplyLike.create({
+	const replyLike = await ReplyLike.create({
 		owner: loggedInUser.id,
-		comment: replyId,
+		reply: replyId,
 	});
+	const reply = await Reply.findByIdAndUpdate(replyLike.reply.id, {
+		$inc: { likeCount: 1 },
+	});
+	await checkResource(reply);
 	return checkResource(replyLike);
 };
 
@@ -52,6 +58,11 @@ export const deleteReplyLike = async (
 	const loggedInUser = await checkUser(user);
 	const replyLikeToDelete = await findResourceById(ReplyLike, likeId);
 	await isResourceOwner(loggedInUser.id, replyLikeToDelete.owner.id);
+	const reply = await Reply.findByIdAndUpdate(replyLikeToDelete.reply.id, {
+		$inc: { likeCount: -1 },
+	});
+
+	await checkResource(reply);
 	await ReplyLike.findByIdAndDelete(replyLikeToDelete.id);
 	return 'like deleted successfully';
 };

@@ -1,11 +1,18 @@
 import { getModelForClass, prop, type Ref } from '@typegoose/typegoose';
 import { TimeStamps } from '@typegoose/typegoose/lib/defaultClasses';
 import { Types } from 'mongoose';
-import { Status } from './types.js';
-import { WorkSpaceSchema } from '../work_spaces/models.js';
-import { MemberSchema } from '../work_space_members/models.js';
+import { Status } from './types';
+import { WorkSpaceSchema } from '../work_spaces/models';
+import { MemberSchema } from '../work_space_members/models';
+import { nanoid } from 'nanoid';
 
 export class TaskSchema extends TimeStamps {
+	@prop({ type: String, unique: true, default: () => nanoid(10) })
+	public publicId?: string;
+
+	@prop({ type: Number, default: 0 })
+	public commentCount?: number;
+
 	@prop({ type: () => Number, required: true, max: 10 })
 	public priority!: number;
 

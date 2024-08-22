@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { asyncHandler } from '../auth/middleware.js';
-import { createCommentLikeSchema } from './validation.js';
+import { asyncHandler } from '../auth/middleware';
+import { createCommentLikeSchema } from './validation';
 
 import type { TypedRequestBody } from 'zod-express-middleware';
-import * as CommentLikeServices from './comment.services.js';
+import * as CommentLikeServices from './comment.services';
 export const getCommentLikes = asyncHandler(
 	async (req: Request, res: Response) => {
 		const { commentId } = req.params;

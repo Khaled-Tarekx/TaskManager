@@ -1,12 +1,12 @@
 import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { asyncHandler } from '../auth/middleware.js';
+import { asyncHandler } from '../auth/middleware';
 
 import { type TypedRequestBody } from 'zod-express-middleware';
-import { updateUserSchema } from './validations.js';
-import * as UserServices from './services.js';
+import { updateUserSchema } from './validations';
+import * as UserServices from './services';
 
-export const getUsers = asyncHandler(async (req: Request, res: Response) => {
+export const getUsers = asyncHandler(async (_req: Request, res: Response) => {
 	const users = await UserServices.getUsers();
 	res.status(StatusCodes.OK).json({ data: users, count: users.length });
 });

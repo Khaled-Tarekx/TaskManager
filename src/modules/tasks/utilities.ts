@@ -1,9 +1,9 @@
-import User from '../users/models.js';
+import User from '../users/models';
 import moment from 'moment';
-import { TaskSchema } from './models.js';
-import { BadRequest } from '../../../custom-errors/main.js';
-import emailQueue from './queue.js';
-import { findResourceById } from 'src/setup/helpers.js';
+import { TaskSchema } from './models';
+import { BadRequest } from '../../custom-errors/main';
+import emailQueue from './queue';
+import { findResourceById } from '../../setup/helpers';
 import Member from '../work_space_members/models';
 
 export const notifyUserOfUpcomingDeadline = async (task: TaskSchema) => {

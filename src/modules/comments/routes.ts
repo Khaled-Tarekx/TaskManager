@@ -1,47 +1,36 @@
-import {Router} from 'express';
+import { Router } from 'express';
 import {
-    getComment,
-    getTaskComments,
-    createComment,
-    getUserComments,
-    getUserComment,
-    editComment,
-    deleteComment,
-} from './controllers.js';
-import {validateResource} from '../auth/utillities.js';
-import {
-    commentParamSchema,
-    createCommentSchema,
-    updateCommentSchema,
-} from './validation.js';
+	getComment,
+	getTaskComments,
+	createComment,
+	getUserComments,
+	getUserComment,
+	editComment,
+	deleteComment,
+} from './controllers';
+import { validateResource } from '../auth/utillities';
+import { createCommentSchema, updateCommentSchema } from './validation';
 
 const router = Router();
-router
-    .route('/')
-    .get(getTaskComments)
-    .post(validateResource({bodySchema: createCommentSchema}), createComment);
+router.get('/:taskId', getTaskComments);
+
+router.post(
+	'/',
+	validateResource({ bodySchema: createCommentSchema }),
+	createComment
+);
+
 router.route('/me').get(getUserComments);
 router.route('/me/:id').get(getUserComment);
 router
-    .route('/:id')
-    .get(
-        validateResource({
-            paramsSchema: commentParamSchema,
-        }),
-        getComment
-    )
-    .patch(
-        validateResource({
-            bodySchema: updateCommentSchema,
-            paramsSchema: commentParamSchema,
-        }),
-        editComment
-    )
-    .delete(
-        validateResource({
-            paramsSchema: commentParamSchema,
-        }),
-        deleteComment
-    );
+	.route('/:id')
+	.get(getComment)
+	.patch(
+		validateResource({
+			bodySchema: updateCommentSchema,
+		}),
+		editComment
+	)
+	.delete(deleteComment);
 
 export default router;

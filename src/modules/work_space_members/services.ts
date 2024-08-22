@@ -1,13 +1,14 @@
-import { NotFound } from '../../../custom-errors/main.js';
-import WorkSpaceMembers from './models.js';
-import { isResourceOwner } from '../users/helpers.js';
+import { NotFound } from '../../custom-errors/main';
+import WorkSpaceMembers from './models';
+import { isResourceOwner } from '../users/helpers';
 import {
 	findResourceById,
 	checkUser,
 	validateObjectIds,
-} from 'src/setup/helpers.js';
-import WorkSpace from '../work_spaces/models.js';
-import type { deleteMemberParams } from './types.js';
+	checkResource,
+} from '../../setup/helpers';
+import WorkSpace from '../work_spaces/models';
+import type { deleteMemberParams } from './types';
 
 export const getMembersOfWorkSpace = async (workSpaceId: string) => {
 	validateObjectIds([workSpaceId]);
@@ -18,13 +19,13 @@ export const getMembersOfWorkSpace = async (workSpaceId: string) => {
 	return members;
 };
 
-export const getMemberByUsername = async (username: string) => {
+export const getMemberByUsername = async <T>(username: T) => {
 	const member = await WorkSpaceMembers.findOne({
 		'member.username': username,
 	});
 
-	if (!member) throw new NotFound(`no member found`);
-	return member;
+	const validatedResource = await checkResource(member);
+	return validatedResource;
 };
 
 export const updateMemberPermissions = async (

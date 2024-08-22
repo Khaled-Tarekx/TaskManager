@@ -1,4 +1,4 @@
-import UnAuthenticated from 'custom-errors/unauthenticated';
+import UnAuthenticated from '../../custom-errors/unauthenticated';
 
 export const isResourceOwner = async (
 	loggedInUserId: string | undefined,

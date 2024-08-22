@@ -1,21 +1,24 @@
+import 'reflect-metadata';
 import 'dotenv/config';
 import express from 'express';
 import session from 'express-session';
-import ErrorHandler from './errors/middleware.js';
-import UserRouter from './src/modules/users/routes.js';
-import AuthRouter from './src/modules/auth/routes.js';
-import TaskRouter from './src/modules/tasks/routes.js';
-import CommentRouter from './src/modules/comments/routes.js';
-import ReplyRouter from './src/modules/replies/routes.js';
-import LikeRouter from './src/modules/likes/routes.js';
-import WorkSpaceRouter from './src/modules/work_spaces/routes.js';
-import MembersRouter from './src/modules/work_space_members/routes.js';
+import ErrorHandler from './src/errors/middleware';
+import UserRouter from './src/modules/users/routes';
+import AuthRouter from './src/modules/auth/routes';
+import TaskRouter from './src/modules/tasks/routes';
+import CommentRouter from './src/modules/comments/routes';
+import ReplyRouter from './src/modules/replies/routes';
+import LikeRouter from './src/modules/likes/routes';
+import WorkSpaceRouter from './src/modules/work_spaces/routes';
+import MembersRouter from './src/modules/work_space_members/routes';
+import swaggerUi from 'swagger-ui-express';
 
-import passport from './src/modules/auth/middleware.js';
-import connectWithRetry from './database/connection.js';
+import passport from './src/modules/auth/middleware';
+import connectWithRetry from './src/database/connection';
 import cors from 'cors';
 import Redis from 'redis';
-import { getTasksPage } from './src/modules/tasks/controllers.js';
+import { getTasksPage } from './src/modules/tasks/controllers';
+import swaggerSpec from './src/setup/swagger';
 
 const secret = process.env.SECRET_KEY;
 
@@ -40,6 +43,7 @@ app.use(
 );
 
 app.use('/', AuthRouter);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -47,6 +51,7 @@ app.get('/tasks', getTasksPage);
 app.set('view engine', 'ejs');
 
 app.use('/uploads', express.static('uploads'));
+
 app.use(authentication);
 app.use('/api/users', UserRouter);
 app.use('/api/workSpaces', WorkSpaceRouter);
@@ -65,4 +70,5 @@ const port = process.env.PORT;
 
 app.listen(port, () => {
 	console.log(`app is listening on port ${port}`);
+	console.log('Swagger UI is available on http://localhost:7500/api-docs');
 });

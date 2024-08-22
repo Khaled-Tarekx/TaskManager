@@ -1,7 +1,7 @@
-import { CustomError } from '../custom-errors/main.js';
+import CustomError from '../custom-errors/custom-error';
 import type { Request, Response } from 'express';
 
-const ErrorHandler = (error: CustomError, req: Request, res: Response) => {
+const ErrorHandler = (error: CustomError, _req: Request, res: Response) => {
 	const statusCode = error.statusCode || 500;
 	res.status(statusCode).json({ error: error.message });
 };

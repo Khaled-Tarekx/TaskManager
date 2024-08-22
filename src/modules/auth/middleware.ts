@@ -1,14 +1,14 @@
 import { ExtractJwt, Strategy, type StrategyOptions } from 'passport-jwt';
 import passport from 'passport';
-import User from '../users/models.js';
+import User from '../users/models';
 import type { NextFunction, Request, Response } from 'express';
 import {
 	NotFound,
 	UnAuthenticated,
 	CustomError,
-} from '../../../custom-errors/main.js';
+} from '../../custom-errors/main';
 import { StatusCodes } from 'http-status-codes';
-import type { Roles } from './types.js';
+import type { Roles } from './types';
 
 const secret = process.env.SECRET_KEY;
 

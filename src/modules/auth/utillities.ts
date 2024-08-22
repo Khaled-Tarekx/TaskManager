@@ -1,19 +1,20 @@
-import User, { UserSchema } from '../users/models.js';
+import User, { UserSchema } from '../users/models';
 import jwt from 'jsonwebtoken';
-import { CustomError, NotFound } from '../../../custom-errors/main.js';
+import {
+	CustomError,
+	NotFound,
+	UnAuthenticated,
+} from '../../custom-errors/main';
 import { type AnyZodObject, ZodError } from 'zod';
 import type { NextFunction, Request, Response } from 'express';
-import { asyncHandler } from './middleware.js';
+import { asyncHandler } from './middleware';
 import { compare } from 'bcrypt';
-import UnAuthenticated from '../../../custom-errors/unauthenticated.js';
 import type { HydratedDocument } from 'mongoose';
 
 const secret = process.env.SECRET_KEY;
 
-export const createTokenFromUser = async <T>(
-	user: T extends HydratedDocument<UserSchema>
-		? T
-		: HydratedDocument<UserSchema>
+export const createTokenFromUser = async (
+	user: HydratedDocument<UserSchema>
 ) => {
 	const tokenUser = await User.findOne({ email: user.email });
 
@@ -40,7 +41,7 @@ export const validateResource = ({
 	return asyncHandler(
 		async (
 			req: Request,
-			res: Response,
+			_res: Response,
 			next: NextFunction
 		): Promise<void> => {
 			try {

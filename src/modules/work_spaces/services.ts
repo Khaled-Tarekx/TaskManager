@@ -1,15 +1,15 @@
-import WorkSpace from './models.js';
-import WorkSpaceMembers from '../work_space_members/models.js';
+import WorkSpace from './models';
+import WorkSpaceMembers from '../work_space_members/models';
 
-import { isResourceOwner } from '../users/helpers.js';
+import { isResourceOwner } from '../users/helpers';
 import {
 	findResourceById,
 	checkUser,
 	validateObjectIds,
 	checkResource,
-} from 'src/setup/helpers.js';
-import { Role } from '../work_space_members/types.js';
-import type { updateWorkSpaceDTO, workSpaceDTO } from './types.js';
+} from '../../setup/helpers';
+import { Role } from '../work_space_members/types';
+import type { updateWorkSpaceDTO, workSpaceDTO } from './types';
 
 export const getWorkSpaces = async () => {
 	return WorkSpace.find({});

@@ -1,13 +1,13 @@
-import { Forbidden } from '../../../custom-errors/main.js';
-import User from './models.js';
+import { Forbidden } from '../../custom-errors/main';
+import User from './models';
 import {
 	findResourceById,
 	checkUser,
 	validateObjectIds,
 	checkResource,
-} from '../../setup/helpers.js';
+} from '../../setup/helpers';
 
-import type { updateUserDTO } from './types.js';
+import type { updateUserDTO } from './types';
 
 export const getUsers = async () => {
 	return User.find({});

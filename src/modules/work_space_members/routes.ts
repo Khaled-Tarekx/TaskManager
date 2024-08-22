@@ -1,38 +1,27 @@
 import express from 'express';
 import {
-	createMember,
 	getMembersOfWorkSpace,
-	getMember,
+	getMemberByUsername,
 	deleteMember,
 	updateMemberPermissions,
-} from './controllers.js';
-import { validateResource } from '../auth/utillities.js';
-import {
-	createMemberSchema,
-	updateMemberSchema,
-	validateMemberParams,
-} from './validation.js';
+} from './controllers';
+import { validateResource } from '../auth/utillities';
+import { updateMemberSchema } from './validation';
 
 const router = express.Router();
 
-router
-	.route('/:workspaceId/ ')
-	.get(getMembersOfWorkSpace)
-	.post(validateResource({ bodySchema: createMemberSchema }), createMember);
+router.route('/:workspaceId ').get(getMembersOfWorkSpace);
+
+router.post('/search', getMemberByUsername);
 
 router
 	.route('/:workspaceId/members/:id')
-	.get(validateResource({ paramsSchema: validateMemberParams }), getMember)
 	.patch(
 		validateResource({
-			paramsSchema: validateMemberParams,
 			bodySchema: updateMemberSchema,
 		}),
 		updateMemberPermissions
 	)
-	.delete(
-		validateResource({ paramsSchema: validateMemberParams }),
-		deleteMember
-	);
+	.delete(deleteMember);
 
 export default router;

@@ -1,6 +1,6 @@
 import { getModelForClass, prop } from '@typegoose/typegoose';
 import { TimeStamps } from '@typegoose/typegoose/lib/defaultClasses';
-import { Position, Roles } from './types.js';
+import { Position, Roles } from './types';
 
 export class UserSchema extends TimeStamps {
 	@prop({ type: () => String, required: true })

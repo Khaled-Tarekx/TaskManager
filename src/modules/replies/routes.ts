@@ -1,13 +1,32 @@
-import { Router } from "express";
-import { getReply, getReplies, createReply, getUserReplies, getUserReply
-    , editReply, deleteReply } from "./controllers.js"
+import { Router } from 'express';
+import { validateResource } from '../auth/utillities';
+import {
+	getReply,
+	getReplies,
+	createReply,
+	getUserReplies,
+	getUserReply,
+	editReply,
+	deleteReply,
+	getCommentReplies,
+} from './controllers';
+import { createReplySchema, updateReplySchema } from './validation';
 
+const router = Router();
+router
+	.route('/')
+	.get(getReplies)
+	.post(validateResource({ bodySchema: createReplySchema }), createReply);
 
+router.get('/:commentId', getCommentReplies);
 
-const router = Router()
-router.route('/').get(getReplies).post(createReply)
-router.route('/me').get(getUserReplies)
-router.route('/me/:id').get(getUserReply)
-router.route('/:id').get(getReply).patch(editReply).delete(deleteReply)
+router.get('/me', getUserReplies);
+router.get('/me/:id', getUserReply);
 
-export default router
+router
+	.route('/:id')
+	.get(getReply)
+	.patch(validateResource({ bodySchema: updateReplySchema }), editReply)
+	.delete(deleteReply);
+
+export default router;

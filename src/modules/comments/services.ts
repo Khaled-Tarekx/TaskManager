@@ -1,13 +1,14 @@
-import Comment from './models.js';
-import { isResourceOwner } from '../users/helpers.js';
+import Comment from './models';
+import { isResourceOwner } from '../users/helpers';
 import {
 	findResourceById,
 	checkUser,
 	validateObjectIds,
 	checkResource,
-} from 'src/setup/helpers.js';
+} from '../../setup/helpers';
 
-import type { createCommentDTO, updateCommentDTO } from './types.js';
+import type { createCommentDTO, updateCommentDTO } from './types';
+import Task from '../tasks/models';
 
 export const getTaskComments = async (taskId: string) => {
 	validateObjectIds([taskId]);
@@ -53,6 +54,12 @@ export const createComment = async (
 		task: taskId,
 		context,
 	});
+
+	const task = await Task.findByIdAndUpdate(taskId, {
+		$inc: { commentCount: 1 },
+	});
+
+	await checkResource(task);
 	return checkResource(comment);
 };
 
@@ -85,7 +92,10 @@ export const deleteComment = async (
 	const loggedInUser = await checkUser(user);
 	const comment = await findResourceById(Comment, commentId);
 	await isResourceOwner(loggedInUser.id, comment.owner.id);
-
+	const task = await Task.findByIdAndUpdate(comment.task.id, {
+		$inc: { commentCount: -1 },
+	});
+	await checkResource(task);
 	await Comment.findByIdAndDelete(comment.id);
 
 	return 'comment deleted successfully';

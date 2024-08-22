@@ -1,13 +1,7 @@
 import express from 'express';
-import { validateResource } from '../auth/utillities.js';
-import {
-	getUsers,
-	getUser,
-	deleteUser,
-	updateUserInfo,
-} from './controllers.js';
-import { checkRequestUser } from './middlewares.js';
-import { updateUserSchema } from './validations.js';
+import { validateResource } from '../auth/utillities';
+import { getUsers, getUser, deleteUser, updateUserInfo } from './controllers';
+import { updateUserSchema } from './validations';
 
 const router = express.Router();
 
@@ -20,5 +14,5 @@ router.patch(
 	updateUserInfo
 );
 
-router.delete('/update-user', checkRequestUser, deleteUser);
+router.delete('/update-user', deleteUser);
 export default router;

@@ -1,20 +1,21 @@
 import type { Request, Response } from 'express';
-import Task from './models.js';
+import Task from './models';
 import { StatusCodes } from 'http-status-codes';
 
-import { validateObjectIds } from '../../setup/helpers.js';
-import { asyncHandler } from '../auth/middleware.js';
+import { validateObjectIds } from '../../setup/helpers';
+import { asyncHandler } from '../auth/middleware';
 import { type TypedRequestBody } from 'zod-express-middleware';
-import { createTaskSchema, updateTaskSchema } from './validation.js';
+import { createTaskSchema, updateTaskSchema } from './validation';
 
-import * as TaskServices from './services.js';
-export const getTasks = asyncHandler(async (req: Request, res: Response) => {
+import * as TaskServices from './services';
+
+export const getTasks = asyncHandler(async (_req: Request, res: Response) => {
 	const tasks = await TaskServices.getTasks();
 	res.status(StatusCodes.OK).json({ data: tasks });
 });
 
 export const getTasksPage = asyncHandler(
-	async (req: Request, res: Response) => {
+	async (_req: Request, res: Response) => {
 		const tasks = await Task.find({});
 		res.render('front_end/index', { tasks: tasks });
 	}

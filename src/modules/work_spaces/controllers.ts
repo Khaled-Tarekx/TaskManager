@@ -1,16 +1,13 @@
 import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { asyncHandler } from '../auth/middleware.js';
-import {
-	createWorkSpaceSchema,
-	updateWorkSpaceSchema,
-} from './validation.js';
+import { asyncHandler } from '../auth/middleware';
+import { createWorkSpaceSchema, updateWorkSpaceSchema } from './validation';
 
 import type { TypedRequestBody } from 'zod-express-middleware';
-import * as WorkSpaceServices from './services.js';
+import * as WorkSpaceServices from './services';
 
 export const getWorkSpaces = asyncHandler(
-	async (req: Request, res: Response) => {
+	async (_req: Request, res: Response) => {
 		const workSpaces = await WorkSpaceServices.getWorkSpaces();
 		res
 			.status(StatusCodes.OK)

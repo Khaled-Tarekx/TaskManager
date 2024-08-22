@@ -1,13 +1,10 @@
 import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { asyncHandler } from '../auth/middleware.js';
+import { asyncHandler } from '../auth/middleware';
 
 import type { TypedRequestBody } from 'zod-express-middleware';
-import type {
-	createCommentSchema,
-	updateCommentSchema,
-} from './validation.js';
-import * as CommentServices from './services.js';
+import type { createCommentSchema, updateCommentSchema } from './validation';
+import * as CommentServices from './services';
 
 export const getTaskComments = asyncHandler(
 	async (req: Request, res: Response) => {

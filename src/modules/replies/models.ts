@@ -5,8 +5,8 @@ import { CommentSchema } from '../comments/models';
 import { UserSchema } from '../users/models';
 
 export class ReplySchema extends TimeStamps {
-	@prop({ ref: () => CommentSchema })
-	public comment?: Ref<CommentSchema>;
+	@prop({ ref: () => CommentSchema, required: true })
+	public comment!: Ref<CommentSchema>;
 
 	@prop({ ref: () => UserSchema, required: true })
 	public owner!: Ref<UserSchema>;
@@ -19,6 +19,9 @@ export class ReplySchema extends TimeStamps {
 
 	@prop({ type: () => String, required: true, minlength: 1 })
 	public context!: string;
+
+	@prop({ type: Number, default: 0 })
+	public likeCount?: number;
 }
 
 const ReplyModel = getModelForClass(ReplySchema);

@@ -1,14 +1,14 @@
 import type { Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { asyncHandler } from '../auth/middleware.js';
+import { asyncHandler } from '../auth/middleware';
 import type {
 	createInviteSchema,
 	acceptInvitationSchema,
-} from './validation.js';
+} from './validation';
 
 import { type TypedRequestBody } from 'zod-express-middleware';
 
-import * as InviteServices from './services.js';
+import * as InviteServices from './services';
 
 export const createInviteLink = asyncHandler(
 	async (req: TypedRequestBody<typeof createInviteSchema>, res: Response) => {

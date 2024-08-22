@@ -1,5 +1,5 @@
 import z from 'zod';
-import { Type } from './types.js';
+import { Type } from './types';
 
 export const createWorkSpaceSchema = z.object({
 	name: z.string(),

@@ -1,21 +1,20 @@
 import express from 'express';
-import { createInviteLink } from './controllers.js';
-import { validateResource } from '../auth/utillities.js';
-import { createInviteSchema } from './validation.js';
+import { acceptInvitation, createInviteLink } from './controllers';
+import { validateResource } from '../auth/utillities';
+import { acceptInvitationSchema, createInviteSchema } from './validation';
 
 const router = express.Router();
 
-router
-	.route('/:workspaceId/invite/')
-	.post(
-		validateResource({ bodySchema: createInviteSchema }),
-		createInviteLink
-	);
-router
-	.route('/:workspaceId/invite/:id')
-	.post(
-		validateResource({ bodySchema: createInviteSchema }),
-		createInviteLink
-	);
+router.post(
+	'/invite',
+	validateResource({ bodySchema: createInviteSchema }),
+	createInviteLink
+);
+
+router.post(
+	'/accept-invitation',
+	validateResource({ bodySchema: acceptInvitationSchema }),
+	acceptInvitation
+);
 
 export default router;

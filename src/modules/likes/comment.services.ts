@@ -1,4 +1,4 @@
-import { CommentLike } from './models.js';
+import { CommentLike } from './models';
 
 import {
 	checkResource,
@@ -6,8 +6,9 @@ import {
 	findResourceById,
 	validateObjectIds,
 } from '../../setup/helpers';
-import { isResourceOwner } from '../users/helpers.js';
-import type { CommentLikeDTO } from './types.js';
+import { isResourceOwner } from '../users/helpers';
+import type { CommentLikeDTO } from './types';
+import Comment from '../comments/models';
 
 export const getCommentLikes = async (commentId: string) => {
 	validateObjectIds([commentId]);
@@ -37,10 +38,14 @@ export const createCommentLike = async (
 
 	const loggedInUser = await checkUser(user);
 
-	const commentLike = CommentLike.create({
+	const commentLike = await CommentLike.create({
 		owner: loggedInUser.id,
 		comment: commentId,
 	});
+	const comment = await Comment.findByIdAndUpdate(commentLike.comment.id, {
+		$inc: { likeCount: 1 },
+	});
+	await checkResource(comment);
 	return checkResource(commentLike);
 };
 
@@ -52,6 +57,13 @@ export const deleteCommentLike = async (
 	const loggedInUser = await checkUser(user);
 	const commentLikeToDelete = await findResourceById(CommentLike, likeId);
 	await isResourceOwner(loggedInUser.id, commentLikeToDelete.owner.id);
+	const comment = await Comment.findByIdAndUpdate(
+		commentLikeToDelete.comment.id,
+		{
+			$inc: { likeCount: -1 },
+		}
+	);
+	await checkResource(comment);
 	await CommentLike.findByIdAndDelete(commentLikeToDelete.id);
 	return 'like deleted successfully';
 };

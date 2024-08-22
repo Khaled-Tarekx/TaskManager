@@ -1,16 +1,20 @@
-import { isResourceOwner } from '../users/helpers.js';
+import { isResourceOwner } from '../users/helpers';
 import {
 	findResourceById,
 	checkUser,
 	validateObjectIds,
 	checkResource,
-} from 'src/setup/helpers.js';
+} from '../../setup/helpers';
 
-import type { createReplyDTO, updateReplyDTO } from './types.js';
-import Reply from './models.js';
+import type { createReplyDTO, updateReplyDTO } from './types';
+import Reply from './models';
+import Comment from '../comments/models';
 
 export const getReplies = async () => {
 	return Reply.find({});
+};
+export const getCommentReplies = async (commentId: string) => {
+	return Reply.find({ comment: commentId });
 };
 
 export const getReply = async (replyId: string) => {
@@ -45,7 +49,6 @@ export const createReply = async (
 ) => {
 	const { comment, parentReply, repliesOfReply, context } = replyData;
 	const loggedInUser = await checkUser(user);
-	validateObjectIds([comment, parentReply, ...repliesOfReply]);
 	const reply = await Reply.create({
 		comment,
 		owner: loggedInUser.id,
@@ -53,6 +56,10 @@ export const createReply = async (
 		repliesOfReply,
 		context,
 	});
+	const commentData = await Comment.findByIdAndUpdate(reply.comment.id, {
+		$inc: { replyCount: 1 },
+	});
+	await checkResource(commentData);
 	return checkResource(reply);
 };
 
@@ -85,7 +92,10 @@ export const deleteReply = async (
 	const loggedInUser = await checkUser(user);
 	const reply = await findResourceById(Reply, replyId);
 	await isResourceOwner(loggedInUser.id, reply.owner.id);
-
+	const comment = await Comment.findByIdAndUpdate(reply.comment.id, {
+		$inc: { replyCount: -1 },
+	});
+	await checkResource(comment);
 	await Reply.findByIdAndDelete(reply.id);
 
 	return 'reply deleted successfully';

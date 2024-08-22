@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { asyncHandler } from '../auth/middleware.js';
+import { asyncHandler } from '../auth/middleware';
 import type { TypedRequestBody } from 'zod-express-middleware';
-import { updateMemberSchema } from './validation.js';
+import { updateMemberSchema } from './validation';
 
-import * as MemberServices from './services.js';
+import * as MemberServices from './services';
 
 export const getMembersOfWorkSpace = asyncHandler(
 	async (req: Request, res: Response) => {
@@ -16,7 +16,7 @@ export const getMembersOfWorkSpace = asyncHandler(
 
 export const getMemberByUsername = asyncHandler(
 	async (req: Request, res: Response) => {
-		const { username } = req.body;
+		const { username } = req.query;
 		const member = await MemberServices.getMemberByUsername(username);
 
 		res.status(StatusCodes.OK).json({ data: member });

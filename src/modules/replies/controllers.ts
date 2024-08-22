@@ -1,14 +1,23 @@
 import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { asyncHandler } from '../auth/middleware.js';
+import { asyncHandler } from '../auth/middleware';
 
-import { createReplySchema, updateReplySchema } from './validation.js';
+import { createReplySchema, updateReplySchema } from './validation';
 import { type TypedRequestBody } from 'zod-express-middleware';
-import * as ReplyServices from './services.js';
+import * as ReplyServices from './services';
 
 export const getReplies = asyncHandler(
-	async (req: Request, res: Response) => {
+	async (_req: Request, res: Response) => {
 		const replies = await ReplyServices.getReplies();
+
+		res.status(StatusCodes.OK).json({ data: replies, count: replies.length });
+	}
+);
+
+export const getCommentReplies = asyncHandler(
+	async (req: Request, res: Response) => {
+		const { commentId } = req.params;
+		const replies = await ReplyServices.getCommentReplies(commentId);
 
 		res.status(StatusCodes.OK).json({ data: replies, count: replies.length });
 	}
@@ -49,6 +58,7 @@ export const createReply = asyncHandler(
 			{ comment, parentReply, repliesOfReply, context },
 			user
 		);
+
 		res.status(StatusCodes.CREATED).json({ data: reply });
 	}
 );

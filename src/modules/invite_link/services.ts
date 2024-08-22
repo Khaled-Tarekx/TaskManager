@@ -1,15 +1,15 @@
-import { NotFound } from '../../../custom-errors/main.js';
-import InviteLink from './models.js';
+import { NotFound } from '../../custom-errors/main';
+import InviteLink from './models';
 import {
 	findResourceById,
 	checkUser,
 	checkResource,
-} from 'src/setup/helpers.js';
-import Members from '../work_space_members/models.js';
-import { Role } from '../work_space_members/types.js';
-import WorkSpace from '../work_spaces/models.js';
-import { isResourceOwner } from '../users/helpers.js';
-import type { acceptInviteDTO, createInviteDTO } from './types.js';
+} from '../../setup/helpers';
+import Members from '../work_space_members/models';
+import { Role } from '../work_space_members/types';
+import WorkSpace from '../work_spaces/models';
+import { isResourceOwner } from '../users/helpers';
+import type { acceptInviteDTO, createInviteDTO } from './types';
 
 export const createInviteLink = async (
 	inviteData: createInviteDTO,

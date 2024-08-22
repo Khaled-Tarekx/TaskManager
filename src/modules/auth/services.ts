@@ -1,8 +1,8 @@
 import type { createUserDTO, loginDTO } from './types';
 import User from '../users/models';
-import { checkResource } from 'src/setup/helpers';
+import { checkResource } from '../../setup/helpers';
 import { comparePassword, createTokenFromUser } from './utillities';
-import { UnAuthenticated } from 'custom-errors/main';
+import { UnAuthenticated } from '../../custom-errors/main';
 import { hash } from 'bcrypt';
 
 const saltRounds = process.env.SALT_ROUNTS;

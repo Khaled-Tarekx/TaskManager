@@ -1,7 +1,7 @@
 import express from 'express';
-import { login, register } from './controllers.js';
-import { validateResource } from './utillities.js';
-import { loginSchema, createUserSchema } from './validation.js';
+import { login, register } from './controllers';
+import { validateResource } from './utillities';
+import { loginSchema, createUserSchema } from './validation';
 
 const router = express.Router();
 

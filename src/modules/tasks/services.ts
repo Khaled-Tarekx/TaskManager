@@ -1,22 +1,22 @@
-import Task from './models.js';
-import { BadRequest, Forbidden } from '../../../custom-errors/main.js';
-import { notifyUserOfUpcomingDeadline } from './utilities.js';
+import Task from './models';
+import { BadRequest, Forbidden } from '../../custom-errors/main';
+import { notifyUserOfUpcomingDeadline } from './utilities';
 import {
 	checkResource,
 	checkUser,
 	findResourceById,
 	getOrSetCache,
 	validateObjectIds,
-} from '../../setup/helpers.js';
+} from '../../setup/helpers';
 
-import { isResourceOwner } from '../users/helpers.js';
+import { isResourceOwner } from '../users/helpers';
 import {
 	Status,
 	type assignTaskParams,
 	type createTaskDTO,
 	type updateTaskDTO,
-} from './types.js';
-import Member from '../work_space_members/models.js';
+} from './types';
+import Member from '../work_space_members/models';
 
 export const getTasks = async () => {
 	return getOrSetCache('tasks', Task, (model) => model.find({}));

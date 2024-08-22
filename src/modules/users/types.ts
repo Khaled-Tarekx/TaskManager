@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { updateUserSchema } from './validations.js';
+import { updateUserSchema } from './validations';
 
 export enum Roles {
 	user = 'user',

@@ -1,10 +1,11 @@
 import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { asyncHandler } from '../auth/middleware.js';
-import { createReplyLikeSchema } from './validation.js';
+import { asyncHandler } from '../auth/middleware';
+import { createReplyLikeSchema } from './validation';
 
 import type { TypedRequestBody } from 'zod-express-middleware';
-import * as ReplyLikeServices from './reply.services.js';
+import * as ReplyLikeServices from './reply.services';
+
 export const getReplyLikes = asyncHandler(
 	async (req: Request, res: Response) => {
 		const { replyId } = req.params;

@@ -1,7 +1,7 @@
 import { getModelForClass, prop, type Ref } from '@typegoose/typegoose';
 import { v4 as uuidv4 } from 'uuid';
-import { UserSchema } from '../users/models.js';
-import { WorkSpaceSchema } from '../work_spaces/models.js';
+import { UserSchema } from '../users/models';
+import { WorkSpaceSchema } from '../work_spaces/models';
 
 export class InviteSchema {
 	@prop({ type: String, default: uuidv4() })

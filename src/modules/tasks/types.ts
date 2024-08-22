@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createTaskSchema, updateTaskSchema } from './validation.js';
+import { createTaskSchema, updateTaskSchema } from './validation';
 
 export enum Status {
 	Unassigned = 'unassigned',

@@ -1,11 +1,7 @@
 import z from 'zod';
-import { client } from '../../main.js';
+import { client } from '../../main';
 import { Types, Model, type HydratedDocument } from 'mongoose';
-import {
-	NotFound,
-	UnAuthenticated,
-	BadRequest,
-} from '../../custom-errors/main.js';
+import { NotFound, UnAuthenticated, BadRequest } from '../custom-errors/main';
 
 const DEFAULT_EXPIRATION = process.env.DEFAULT_EXPIRATION_CASHE;
 
@@ -40,6 +36,17 @@ export const mongooseId = z.custom<string>(
 		message: 'id is not valid mongoose id ',
 	}
 );
+// export const findResourceById = async <T extends AnyParamConstructor<any>>(
+// 	model: ReturnModelType<T>,
+// 	id: string | undefined
+// ): Promise<DocumentType<T>> => {
+// 	if (!id) throw new Error('ID is required');
+
+// 	const resource = await model.findById(id);
+// 	const checkedResource = await checkResource(resource);
+
+// 	return checkedResource;
+// };
 
 export const findResourceById = async <T>(
 	model: Model<T>,

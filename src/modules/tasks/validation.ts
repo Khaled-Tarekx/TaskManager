@@ -1,4 +1,4 @@
-import { mongooseId } from 'src/setup/helpers.js';
+import { mongooseId } from '../../setup/helpers';
 import z from 'zod';
 
 const status = ['unAssigned', 'inProgress', 'completed'] as const;
