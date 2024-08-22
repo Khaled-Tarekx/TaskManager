@@ -5,7 +5,7 @@ import {
 	deleteMember,
 	updateMemberPermissions,
 } from './controllers';
-import { validateResource } from '../auth/utillities';
+import { validateResource } from '../../auth/utillities';
 import { updateMemberSchema } from './validation';
 
 const router = express.Router();

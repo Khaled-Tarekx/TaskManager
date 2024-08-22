@@ -1,4 +1,4 @@
-import { mongooseId } from '../../setup/helpers';
+import { mongooseId } from '../../../setup/helpers';
 import z from 'zod';
 import { Role } from './types';
 

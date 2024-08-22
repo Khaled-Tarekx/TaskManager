@@ -7,7 +7,7 @@ import {
 	validateObjectIds,
 	checkResource,
 } from '../../setup/helpers';
-import { Role } from '../work_space_members/types';
+import { Role } from './work_space_members/types';
 import type { updateWorkSpaceDTO, workSpaceDTO } from './types';
 
 export const getWorkSpaces = async () => {

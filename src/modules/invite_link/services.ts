@@ -5,7 +5,7 @@ import {
 	checkUser,
 	checkResource,
 } from '../../setup/helpers';
-import { Role } from '../work_space_members/types';
+import { Role } from '../work_spaces/work_space_members/types';
 import { WorkSpace, Member } from '../work_spaces/models';
 import { isResourceOwner } from '../users/helpers';
 import type { acceptInviteDTO, createInviteDTO } from './types';

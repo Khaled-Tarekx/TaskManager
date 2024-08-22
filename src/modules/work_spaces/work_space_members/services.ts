@@ -1,8 +1,13 @@
-import {NotFound} from '../../custom-errors/main';
-import {Member, WorkSpace} from '../work_spaces/models';
-import {isResourceOwner} from '../users/helpers';
-import {checkResource, checkUser, findResourceById, validateObjectIds,} from '../../setup/helpers';
-import type {deleteMemberParams} from './types';
+import { NotFound } from '../../../custom-errors/main';
+import { Member, WorkSpace } from '../models';
+import { isResourceOwner } from '../../users/helpers';
+import {
+	checkResource,
+	checkUser,
+	findResourceById,
+	validateObjectIds,
+} from '../../../setup/helpers';
+import type { deleteMemberParams } from './types';
 
 export const getMembersOfWorkSpace = async (workSpaceId: string) => {
 	validateObjectIds([workSpaceId]);

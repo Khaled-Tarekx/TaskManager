@@ -10,7 +10,7 @@ import CommentRouter from './src/modules/comments/routes';
 import ReplyRouter from './src/modules/replies/routes';
 import LikeRouter from './src/modules/likes/routes';
 import WorkSpaceRouter from './src/modules/work_spaces/routes';
-import MembersRouter from './src/modules/work_space_members/routes';
+import MembersRouter from './src/modules/work_spaces/work_space_members/routes';
 import swaggerUi from 'swagger-ui-express';
 
 import passport from './src/modules/auth/middleware';
@@ -25,9 +25,9 @@ const secret = process.env.SECRET_KEY;
 export const client = Redis.createClient();
 
 client.on('error', (err) => console.log('Redis Client Error', err));
-
+console.log('alo');
 // await client.connect();
-
+console.log('older mamaa');
 const app = express();
 const authentication = passport.authenticate('jwt');
 

@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { asyncHandler } from '../auth/middleware';
+import { asyncHandler } from '../../auth/middleware';
 import type { TypedRequestBody } from 'zod-express-middleware';
 import { updateMemberSchema } from './validation';
 

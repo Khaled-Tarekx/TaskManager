@@ -1,0 +1,11 @@
+{
+    "filewatcher.commands": [
+        {
+            "match": "\\.ts*",
+            "isAsync": true,
+            "event": "onFileChange",
+            "vscodeTask": "workbench.action.tasks.dev"
+            
+        }
+    ]
+}

@@ -1,8 +1,12 @@
-import {getModelForClass, modelOptions, prop, type Ref} from '@typegoose/typegoose';
+import {
+	getModelForClass,
+	modelOptions,
+	prop,
+	type Ref,
+} from '@typegoose/typegoose';
 import { Type } from './types';
 import { UserSchema } from '../users/models';
-import { Role } from '../work_space_members/types';
-
+import { Role } from './work_space_members/types';
 
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class WorkSpaceSchema {
@@ -18,7 +22,6 @@ export class WorkSpaceSchema {
 	@prop({ enum: Type, default: Type.other })
 	public type!: Type;
 }
-
 
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class MemberSchema {
