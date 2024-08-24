@@ -3,7 +3,7 @@ import moment from 'moment';
 import { TaskSchema } from './models';
 import { BadRequest } from '../../custom-errors/main';
 import emailQueue from './queue';
-import { findResourceById } from '../../setup/helpers';
+import { findResourceById } from '../../utills/helpers';
 import { Member } from '../workspaces/models';
 
 export const notifyUserOfUpcomingDeadline = async (task: TaskSchema) => {

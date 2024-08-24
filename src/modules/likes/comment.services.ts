@@ -2,11 +2,10 @@ import { CommentLike } from './models';
 
 import {
 	checkResource,
-	checkUser,
 	findResourceById,
 	validateObjectIds,
-} from '../../setup/helpers';
-import { isResourceOwner } from '../users/helpers';
+	isResourceOwner,
+} from '../../utills/helpers';
 import type { CommentLikeDTO } from './types';
 import Comment from '../comments/models';
 import { Forbidden } from '../../custom-errors/main';
@@ -30,11 +29,10 @@ export const getCommentLike = async (likeId: string) => {
 	}
 };
 
-export const getUserCommentLike = async (user: Express.User | undefined) => {
+export const getUserCommentLike = async (user: Express.User) => {
 	try {
-		const loggedInUser = await checkUser(user);
 		const userCommentLike = await CommentLike.findOne({
-			owner: loggedInUser.id,
+			owner: user.id,
 		});
 		return checkResource(userCommentLike);
 	} catch (err: any) {
@@ -44,16 +42,14 @@ export const getUserCommentLike = async (user: Express.User | undefined) => {
 
 export const createCommentLike = async (
 	commentData: CommentLikeDTO,
-	user: Express.User | undefined
+	user: Express.User
 ) => {
 	const { commentId } = commentData;
 	try {
 		validateObjectIds([commentId]);
 
-		const loggedInUser = await checkUser(user);
-
 		const commentLike = await CommentLike.create({
-			owner: loggedInUser.id,
+			owner: user.id,
 			comment: commentId,
 		});
 		const comment = await Comment.findByIdAndUpdate(commentLike.comment.id, {
@@ -68,13 +64,12 @@ export const createCommentLike = async (
 
 export const deleteCommentLike = async (
 	likeId: string,
-	user: Express.User | undefined
+	user: Express.User
 ) => {
 	try {
 		validateObjectIds([likeId]);
-		const loggedInUser = await checkUser(user);
 		const commentLikeToDelete = await findResourceById(CommentLike, likeId);
-		await isResourceOwner(loggedInUser.id, commentLikeToDelete.owner.id);
+		await isResourceOwner(user.id, commentLikeToDelete.owner._id);
 		const comment = await Comment.findByIdAndUpdate(
 			commentLikeToDelete.comment.id,
 			{
@@ -83,7 +78,7 @@ export const deleteCommentLike = async (
 		);
 		await checkResource(comment);
 		await CommentLike.findByIdAndDelete(commentLikeToDelete.id);
-		return 'like deleted successfully';
+		return commentLikeToDelete;
 	} catch (err: any) {
 		throw new Forbidden(err.message);
 	}

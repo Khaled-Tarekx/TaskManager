@@ -1,11 +1,11 @@
-import { mongooseId } from '../../setup/helpers';
+import { mongooseId } from '../../utills/helpers';
 
 import z from 'zod';
 
 export const createReplySchema = z.object({
-	comment: mongooseId,
-	parentReply: mongooseId,
-	repliesOfReply: z.array(mongooseId),
+	commentId: mongooseId,
+	parentReply: mongooseId.optional(),
+	repliesOfReply: z.array(mongooseId).optional(),
 	context: z.string(),
 });
 export const updateReplySchema = z.object({

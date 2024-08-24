@@ -2,23 +2,26 @@ import { Forbidden, NotFound } from '../../custom-errors/main';
 import InviteLink from './models';
 import {
 	findResourceById,
-	checkUser,
 	checkResource,
-} from '../../setup/helpers';
-import { Role } from '../workspaces/workspace_members/types';
+	isResourceOwner,
+	isExpired,
+} from '../../utills/helpers';
 import { WorkSpace, Member } from '../workspaces/models';
-import { isResourceOwner } from '../users/helpers';
 import type { acceptInviteDTO, createInviteDTO } from './types';
+import { Role } from '../workspaces/members/types';
 
 export const createInviteLink = async (
 	inviteData: createInviteDTO,
-	user: Express.User | undefined
+	user: Express.User
 ) => {
 	const { workspaceId, receiverId } = inviteData;
 	try {
-		const loggedInUser = await checkUser(user);
 		const workspace = await findResourceById(WorkSpace, workspaceId);
-		await isResourceOwner(loggedInUser.id, workspace.owner.id);
+		const workspaceOwner = await findResourceById(
+			Member,
+			workspace.owner._id
+		);
+		await isResourceOwner(user.id, workspaceOwner.member._id);
 
 		const invitation = await InviteLink.create({
 			receiver: receiverId,
@@ -30,21 +33,17 @@ export const createInviteLink = async (
 	}
 };
 
-export const acceptInvitation = async (token: acceptInviteDTO) => {
+export const acceptInvitation = async (token: string) => {
 	try {
 		const invitation = await InviteLink.findOne({
 			token,
 		});
 
 		const validatedResource = await checkResource(invitation);
-
-		if (validatedResource.expiresAt <= validatedResource.createdAt) {
-			throw new NotFound('invite link already expired');
-		}
-
+		isExpired(validatedResource.expiresAt, validatedResource.createdAt);
 		const member = await Member.create({
-			member: validatedResource.receiver.id,
-			workspace: validatedResource.workspace.id,
+			member: validatedResource.receiver._id,
+			workspace: validatedResource.workspace._id,
 			role: Role.member,
 		});
 

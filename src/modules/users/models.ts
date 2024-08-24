@@ -1,8 +1,12 @@
 import { getModelForClass, modelOptions, prop } from '@typegoose/typegoose';
 import { Position, Roles } from '../auth/types';
+import { Types } from 'mongoose';
 
-@modelOptions({ schemaOptions: { timestamps: true } })
+@modelOptions({ schemaOptions: { timestamps: true, id: true } })
 export class UserSchema {
+	@prop({ required: true, default: () => new Types.ObjectId() })
+	public _id!: Types.ObjectId;
+
 	@prop({ type: () => String, required: true })
 	public username!: string;
 
@@ -24,6 +28,10 @@ export class UserSchema {
 
 	@prop({ enum: Position, required: true })
 	public position!: string;
+
+	public get id(): string {
+		return this._id.toString();
+	}
 }
 
 const UserModel = getModelForClass(UserSchema);

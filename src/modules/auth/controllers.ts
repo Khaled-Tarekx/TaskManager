@@ -30,4 +30,3 @@ export const login = asyncHandler(
 		res.status(StatusCodes.CREATED).json({ token });
 	}
 );
-console.log('tata');

@@ -1,11 +1,10 @@
 import Comment from './models';
-import { isResourceOwner } from '../users/helpers';
 import {
 	findResourceById,
-	checkUser,
 	validateObjectIds,
 	checkResource,
-} from '../../setup/helpers';
+	isResourceOwner,
+} from '../../utills/helpers';
 
 import type { createCommentDTO, updateCommentDTO } from './types';
 import Task from '../tasks/models';
@@ -30,45 +29,16 @@ export const getComment = async (commentId: string) => {
 	}
 };
 
-export const getUserComments = async (user: Express.User | undefined) => {
-	try {
-		const loggedInUser = await checkUser(user);
-		return Comment.find({
-			owner: loggedInUser.id,
-		});
-	} catch (err: any) {
-		throw new Forbidden(err.message);
-	}
-};
-
-export const getUserComment = async (
-	commentId: string,
-	user: Express.User | undefined
-) => {
-	try {
-		validateObjectIds([commentId]);
-		const loggedInUser = await checkUser(user);
-		const comment = await Comment.findOne({
-			_id: commentId,
-			owner: loggedInUser.id,
-		});
-		return checkResource(comment);
-	} catch (err: any) {
-		throw new Forbidden(err.message);
-	}
-};
-
 export const createComment = async (
 	commentData: createCommentDTO,
-	user: Express.User | undefined
+	user: Express.User
 ) => {
 	const { taskId, context } = commentData;
 	try {
 		validateObjectIds([taskId]);
-		const loggedInUser = await checkUser(user);
 
 		const comment = await Comment.create({
-			owner: loggedInUser.id,
+			owner: user.id,
 			task: taskId,
 			context,
 		});
@@ -87,14 +57,13 @@ export const createComment = async (
 export const editComment = async (
 	commentData: updateCommentDTO,
 	commentId: string,
-	user: Express.User | undefined
+	user: Express.User
 ) => {
 	const { context } = commentData;
 	try {
 		validateObjectIds([commentId]);
-		const loggedInUser = await checkUser(user);
 		const comment = await findResourceById(Comment, commentId);
-		await isResourceOwner(loggedInUser.id, comment.owner.id);
+		await isResourceOwner(user.id, comment.owner._id);
 
 		const commentToUpdate = await Comment.findByIdAndUpdate(
 			comment.id,
@@ -109,22 +78,21 @@ export const editComment = async (
 };
 
 export const deleteComment = async (
-	user: Express.User | undefined,
+	user: Express.User,
 	commentId: string
 ) => {
 	try {
 		validateObjectIds([commentId]);
 
-		const loggedInUser = await checkUser(user);
 		const comment = await findResourceById(Comment, commentId);
-		await isResourceOwner(loggedInUser.id, comment.owner.id);
+		await isResourceOwner(user.id, comment.owner._id);
 		const task = await Task.findByIdAndUpdate(comment.task.id, {
 			$inc: { commentCount: -1 },
 		});
 		await checkResource(task);
 		await Comment.findByIdAndDelete(comment.id);
 
-		return 'comment deleted successfully';
+		return comment;
 	} catch (err: any) {
 		throw new Forbidden(err.message);
 	}

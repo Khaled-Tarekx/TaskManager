@@ -1,30 +1,35 @@
 import { WorkSpace, Member } from './models';
 
-import { isResourceOwner } from '../users/helpers';
 import {
 	findResourceById,
-	checkUser,
 	validateObjectIds,
 	checkResource,
-} from '../../setup/helpers';
-import { Role } from './workspace_members/types';
+	isResourceOwner,
+} from '../../utills/helpers';
+import { Role } from './members/types';
 import type { updateWorkSpaceDTO, workSpaceDTO } from './types';
 
 export const getWorkSpaces = async () => {
 	return WorkSpace.find({});
 };
 
+export const getMembersOfWorkSpace = async (workspaceId: string) => {
+	validateObjectIds([workspaceId]);
+
+	return Member.find({
+		workspace: workspaceId,
+	}).populate('member');
+};
+
 export const createWorkSpace = async (
 	workSpaceData: workSpaceDTO,
-	user: Express.User | undefined
+	user: Express.User
 ) => {
 	const { name, type, description } = workSpaceData;
 
-	const loggedInUser = await checkUser(user);
-
 	const workSpaceOwner = new Member({
 		role: Role.owner,
-		member: loggedInUser.id,
+		member: user.id,
 		description,
 	});
 
@@ -42,25 +47,28 @@ export const createWorkSpace = async (
 	return { work_space, workSpaceOwner };
 };
 
-export const getWorkSpace = async (workSpaceId: string) => {
-	validateObjectIds([workSpaceId]);
-	return findResourceById(WorkSpace, workSpaceId);
+export const getWorkSpace = async (workspaceId: string) => {
+	validateObjectIds([workspaceId]);
+	return findResourceById(WorkSpace, workspaceId);
 };
 
 export const updateWorkSpace = async (
-	workSpaceId: string,
+	workspaceId: string,
 	workSpaceData: updateWorkSpaceDTO,
-	user: Express.User | undefined
+	user: Express.User
 ) => {
 	const { name, description, type } = workSpaceData;
-	validateObjectIds([workSpaceId]);
+	validateObjectIds([workspaceId]);
+	const workspace = await findResourceById(WorkSpace, workspaceId);
+	const userToCompare = await findResourceById(
+		Member,
+		workspace.owner._id.toString()
+	);
 
-	const loggedInUser = await checkUser(user);
-	const work_space = await findResourceById(WorkSpace, workSpaceId);
-	await isResourceOwner(loggedInUser.id, work_space.owner.id);
+	await isResourceOwner(user.id, userToCompare.member._id);
 
 	const updatedWorkSpace = await WorkSpace.findByIdAndUpdate(
-		work_space.id,
+		workspace.id,
 		{ name, description, type },
 		{ new: true }
 	);
@@ -69,13 +77,17 @@ export const updateWorkSpace = async (
 };
 
 export const deleteWorkSpace = async (
-	workSpaceId: string,
-	user: Express.User | undefined
+	workspaceId: string,
+	user: Express.User
 ) => {
-	validateObjectIds([workSpaceId]);
-	const loggedInUser = await checkUser(user);
-	const work_space = await findResourceById(WorkSpace, workSpaceId);
-	await isResourceOwner(loggedInUser.id, work_space.owner.id);
-	await WorkSpace.findByIdAndDelete(work_space.id);
-	return 'Work Space Deleted Successfully';
+	validateObjectIds([workspaceId]);
+	const workspace = await findResourceById(WorkSpace, workspaceId);
+	const userToCompare = await findResourceById(
+		Member,
+		workspace.owner._id.toString()
+	);
+
+	await isResourceOwner(user.id, userToCompare.member._id);
+	await WorkSpace.findByIdAndDelete(workspace.id);
+	return workspace;
 };

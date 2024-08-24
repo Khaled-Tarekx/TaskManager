@@ -1,6 +1,5 @@
 import express from 'express';
 import {
-	getMembersOfWorkSpace,
 	getMemberByUsername,
 	deleteMember,
 	updateMemberPermissions,
@@ -10,12 +9,10 @@ import { updateMemberSchema } from './validation';
 
 const router = express.Router();
 
-router.route('/:workspaceId ').get(getMembersOfWorkSpace);
-
-router.post('/search', getMemberByUsername);
+router.get('/members/search', getMemberByUsername);
 
 router
-	.route('/:workspaceId/members/:id')
+	.route('/:workspaceId/members/:memberId')
 	.patch(
 		validateResource({
 			bodySchema: updateMemberSchema,

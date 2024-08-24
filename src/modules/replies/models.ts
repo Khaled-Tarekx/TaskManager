@@ -1,4 +1,9 @@
-import {prop, type Ref, getModelForClass, modelOptions} from '@typegoose/typegoose';
+import {
+	prop,
+	type Ref,
+	getModelForClass,
+	modelOptions,
+} from '@typegoose/typegoose';
 
 import { CommentSchema } from '../comments/models';
 import { UserSchema } from '../users/models';
@@ -14,7 +19,7 @@ export class ReplySchema {
 	@prop({ ref: () => ReplySchema })
 	public parentReply?: Ref<ReplySchema>;
 
-	@prop({ ref: () => ReplySchema, default: [] })
+	@prop({ ref: () => ReplySchema })
 	public repliesOfReply?: Ref<ReplySchema>[];
 
 	@prop({ type: () => String, required: true, minlength: 1 })

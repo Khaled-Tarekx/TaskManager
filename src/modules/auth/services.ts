@@ -1,6 +1,6 @@
 import type { createUserDTO, loginDTO } from './types';
 import User from '../users/models';
-import { checkResource } from '../../setup/helpers';
+import { checkResource } from '../../utills/helpers';
 import { comparePassword, createTokenFromUser } from './utillities';
 import { Forbidden, UnAuthenticated } from '../../custom-errors/main';
 import { hash } from 'bcrypt';

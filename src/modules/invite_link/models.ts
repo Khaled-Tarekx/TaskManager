@@ -15,11 +15,11 @@ export class InviteSchema {
 	@prop({
 		type: Date,
 		required: true,
-		default: () => Date.now() / 1000 + 3600,
+		default: () => new Date(Date.now() + 3600 * 1000),
 	})
 	public expiresAt!: Date;
 
-	@prop({ type: Date, required: true, default: Date.now })
+	@prop({ type: Date, required: true, default: new Date(Date.now()) })
 	public createdAt!: Date;
 }
 

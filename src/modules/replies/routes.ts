@@ -4,8 +4,6 @@ import {
 	getReply,
 	getReplies,
 	createReply,
-	getUserReplies,
-	getUserReply,
 	editReply,
 	deleteReply,
 	getCommentReplies,
@@ -17,9 +15,7 @@ router
 	.route('/')
 	.get(getReplies)
 	.post(validateResource({ bodySchema: createReplySchema }), createReply);
-router.get('/me/:replyId', getUserReply);
 
-router.get('/me', getUserReplies);
 router.get('/:commentId', getCommentReplies);
 
 router

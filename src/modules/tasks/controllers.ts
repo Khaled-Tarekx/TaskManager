@@ -1,8 +1,7 @@
 import type { Request, Response } from 'express';
 import Task from './models';
 import { StatusCodes } from 'http-status-codes';
-
-import { validateObjectIds } from '../../setup/helpers';
+import { checkUser, validateObjectIds } from '../../utills/helpers';
 import { asyncHandler } from '../auth/middleware';
 import { type TypedRequestBody } from 'zod-express-middleware';
 import { createTaskSchema, updateTaskSchema } from './validation';
@@ -24,6 +23,7 @@ export const getTasksPage = asyncHandler(
 export const getUserTasks = asyncHandler(
 	async (req: Request, res: Response) => {
 		const user = req.user;
+		checkUser(user);
 		const tasks = await TaskServices.getUserTasks(user);
 
 		res.status(StatusCodes.OK).json({ data: tasks, count: tasks.length });
@@ -33,6 +33,7 @@ export const getUserTasks = asyncHandler(
 export const getUserTask = asyncHandler(
 	async (req: Request, res: Response) => {
 		const user = req.user;
+		checkUser(user);
 		const { taskId } = req.params;
 		const task = await TaskServices.getUserTask(user, taskId);
 
@@ -50,6 +51,7 @@ export const getTask = asyncHandler(async (req: Request, res: Response) => {
 export const createTask = asyncHandler(
 	async (req: TypedRequestBody<typeof createTaskSchema>, res: Response) => {
 		const user = req.user;
+		checkUser(user);
 		const attachment = req.file;
 		const {
 			dead_line,
@@ -83,6 +85,7 @@ export const updateTask = asyncHandler(
 		const { priority, skill_set, dead_line } = req.body;
 		const { taskId } = req.params;
 		const user = req.user;
+		checkUser(user);
 		const attachment = req.file;
 
 		const updatedTask = await TaskServices.updateTask(
@@ -102,10 +105,11 @@ export const updateTask = asyncHandler(
 export const deleteTask = asyncHandler(
 	async (req: Request, res: Response) => {
 		const user = req.user;
+		checkUser(user);
 		const { taskId } = req.params;
 
-		const msg = await TaskServices.deleteTask(user, taskId);
-		res.status(StatusCodes.OK).json({ msg });
+		const deletedTask = await TaskServices.deleteTask(user, taskId);
+		res.status(StatusCodes.OK).json({ data: deletedTask });
 	}
 );
 
@@ -113,7 +117,7 @@ export const assignTask = asyncHandler(
 	async (req: Request, res: Response) => {
 		const { taskId, workerId } = req.params;
 		const user = req.user;
-
+		checkUser(user);
 		validateObjectIds([taskId, workerId]);
 		const assignedTask = await TaskServices.assignTask(
 			{ taskId, workerId },
@@ -130,6 +134,7 @@ export const markCompleted = asyncHandler(
 	async (req: Request, res: Response) => {
 		const { taskId } = req.params;
 		const user = req.user;
+		checkUser(user);
 		const markedTask = await TaskServices.markCompleted(taskId, user);
 		res.status(StatusCodes.OK).json({ data: markedTask });
 	}

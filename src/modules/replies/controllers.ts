@@ -5,6 +5,7 @@ import { asyncHandler } from '../auth/middleware';
 import { createReplySchema, updateReplySchema } from './validation';
 import { type TypedRequestBody } from 'zod-express-middleware';
 import * as ReplyServices from './services';
+import { checkUser } from '../../utills/helpers';
 
 export const getReplies = asyncHandler(
 	async (_req: Request, res: Response) => {
@@ -29,33 +30,14 @@ export const getReply = asyncHandler(async (req: Request, res: Response) => {
 	res.status(StatusCodes.OK).json({ data: reply });
 });
 
-export const getUserReplies = asyncHandler(
-	async (req: Request, res: Response) => {
-		const user = req.user;
-		const userReplies = await ReplyServices.getUserReplies(user);
-
-		res
-			.status(StatusCodes.OK)
-			.json({ data: userReplies, count: userReplies.length });
-	}
-);
-
-export const getUserReply = asyncHandler(
-	async (req: Request, res: Response) => {
-		const { replyId } = req.params;
-		const user = req.user;
-		const userReply = await ReplyServices.getUserReply(replyId, user);
-		res.status(StatusCodes.OK).json({ data: userReply });
-	}
-);
-
 export const createReply = asyncHandler(
 	async (req: TypedRequestBody<typeof createReplySchema>, res: Response) => {
-		const { comment, parentReply, repliesOfReply, context } = req.body;
+		const { commentId, parentReply, repliesOfReply, context } = req.body;
 		const user = req.user;
+		checkUser(user);
 
 		const reply = await ReplyServices.createReply(
-			{ comment, parentReply, repliesOfReply, context },
+			{ commentId, parentReply, repliesOfReply, context },
 			user
 		);
 
@@ -68,6 +50,8 @@ export const editReply = asyncHandler(
 		const { replyId } = req.params;
 		const { context } = req.body;
 		const user = req.user;
+		checkUser(user);
+
 		const editedReply = await ReplyServices.editReply(
 			{ context },
 			replyId,
@@ -81,9 +65,9 @@ export const editReply = asyncHandler(
 export const deleteReply = asyncHandler(
 	async (req: Request, res: Response) => {
 		const user = req.user;
+		checkUser(user);
 		const { replyId } = req.params;
-		const msg = await ReplyServices.deleteReply(user, replyId);
-
-		res.status(StatusCodes.OK).json({ msg });
+		const deletedReply = await ReplyServices.deleteReply(user, replyId);
+		res.status(StatusCodes.OK).json({ data: deletedReply });
 	}
 );

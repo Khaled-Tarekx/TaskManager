@@ -7,13 +7,14 @@ import type {
 } from './validation';
 
 import { type TypedRequestBody } from 'zod-express-middleware';
-
+import { checkUser } from '../../utills/helpers';
 import * as InviteServices from './services';
 
 export const createInviteLink = asyncHandler(
 	async (req: TypedRequestBody<typeof createInviteSchema>, res: Response) => {
 		const { workspaceId, receiverId } = req.body;
 		const user = req.user;
+		checkUser(user);
 		const invitation = await InviteServices.createInviteLink(
 			{ workspaceId, receiverId },
 			user
@@ -30,7 +31,7 @@ export const acceptInvitation = asyncHandler(
 	) => {
 		const { token } = req.body;
 
-		const member = await InviteServices.acceptInvitation({ token });
+		const member = await InviteServices.acceptInvitation(token);
 
 		res.status(StatusCodes.CREATED).json({ member });
 	}

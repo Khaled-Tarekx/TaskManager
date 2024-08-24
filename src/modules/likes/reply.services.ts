@@ -2,11 +2,10 @@ import { ReplyLike } from './models';
 
 import {
 	checkResource,
-	checkUser,
 	findResourceById,
 	validateObjectIds,
-} from '../../setup/helpers';
-import { isResourceOwner } from '../users/helpers';
+	isResourceOwner,
+} from '../../utills/helpers';
 import type { ReplyLikeDTO } from './types';
 
 import Reply from '../replies/models';
@@ -24,7 +23,6 @@ export const getReplyLikes = async (replyId: string) => {
 export const getReplyLike = async (likeId: string) => {
 	try {
 		validateObjectIds([likeId]);
-
 		return findResourceById(ReplyLike, likeId);
 	} catch (err: any) {
 		throw new Forbidden(err.message);
@@ -32,13 +30,12 @@ export const getReplyLike = async (likeId: string) => {
 };
 
 export const getUserReplyLike = async (
-	user: Express.User | undefined,
+	user: Express.User,
 	replyId: string
 ) => {
 	try {
-		const loggedInUser = await checkUser(user);
 		const userReplyLike = await ReplyLike.findOne({
-			owner: loggedInUser.id,
+			owner: user.id,
 			reply: replyId,
 		});
 		return checkResource(userReplyLike);
@@ -49,16 +46,14 @@ export const getUserReplyLike = async (
 
 export const createReplyLike = async (
 	replyData: ReplyLikeDTO,
-	user: Express.User | undefined
+	user: Express.User
 ) => {
 	const { replyId } = replyData;
 	try {
 		validateObjectIds([replyId]);
 
-		const loggedInUser = await checkUser(user);
-
 		const replyLike = await ReplyLike.create({
-			owner: loggedInUser.id,
+			owner: user.id,
 			reply: replyId,
 		});
 		const reply = await Reply.findByIdAndUpdate(replyLike.reply.id, {
@@ -71,22 +66,18 @@ export const createReplyLike = async (
 	}
 };
 
-export const deleteReplyLike = async (
-	likeId: string,
-	user: Express.User | undefined
-) => {
+export const deleteReplyLike = async (likeId: string, user: Express.User) => {
 	try {
 		validateObjectIds([likeId]);
-		const loggedInUser = await checkUser(user);
 		const replyLikeToDelete = await findResourceById(ReplyLike, likeId);
-		await isResourceOwner(loggedInUser.id, replyLikeToDelete.owner.id);
+		await isResourceOwner(user.id, replyLikeToDelete.owner._id);
 		const reply = await Reply.findByIdAndUpdate(replyLikeToDelete.reply.id, {
 			$inc: { likeCount: -1 },
 		});
 
 		await checkResource(reply);
 		await ReplyLike.findByIdAndDelete(replyLikeToDelete.id);
-		return 'like deleted successfully';
+		return replyLikeToDelete;
 	} catch (err: any) {
 		throw new Forbidden(err.message);
 	}

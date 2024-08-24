@@ -5,6 +5,7 @@ import { createCommentLikeSchema } from './validation';
 
 import type { TypedRequestBody } from 'zod-express-middleware';
 import * as CommentLikeServices from './comment.services';
+import { checkUser } from '../../utills/helpers';
 
 export const getCommentLikes = asyncHandler(
 	async (req: Request, res: Response) => {
@@ -19,6 +20,7 @@ export const getCommentLikes = asyncHandler(
 export const getUserCommentLike = asyncHandler(
 	async (req: Request, res: Response) => {
 		const user = req.user;
+		checkUser(user);
 		const userCommentLike = await CommentLikeServices.getUserCommentLike(
 			user
 		);
@@ -32,6 +34,8 @@ export const createCommentLike = asyncHandler(
 		res: Response
 	) => {
 		const user = req.user;
+		checkUser(user);
+
 		const { commentId } = req.body;
 		const commentLike = await CommentLikeServices.createCommentLike(
 			{ commentId },
@@ -44,9 +48,13 @@ export const createCommentLike = asyncHandler(
 export const deleteCommentLike = asyncHandler(
 	async (req: Request, res: Response) => {
 		const user = req.user;
+		checkUser(user);
 		const { likeId } = req.params;
-		const msg = await CommentLikeServices.deleteCommentLike(likeId, user);
+		const deletedCommentLike = await CommentLikeServices.deleteCommentLike(
+			likeId,
+			user
+		);
 
-		res.status(StatusCodes.OK).json({ msg });
+		res.status(StatusCodes.OK).json({ data: deletedCommentLike });
 	}
 );

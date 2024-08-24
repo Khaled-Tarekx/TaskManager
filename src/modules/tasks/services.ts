@@ -1,15 +1,14 @@
 import Task from './models';
 import { BadRequest, Forbidden } from '../../custom-errors/main';
-import { notifyUserOfUpcomingDeadline } from './utilities';
+import { notifyUserOfUpcomingDeadline } from './utills';
 import {
 	checkResource,
-	checkUser,
 	findResourceById,
 	getOrSetCache,
 	validateObjectIds,
-} from '../../setup/helpers';
+	isResourceOwner,
+} from '../../utills/helpers';
 
-import { isResourceOwner } from '../users/helpers';
 import {
 	Status,
 	type assignTaskParams,
@@ -22,21 +21,15 @@ export const getTasks = async () => {
 	return getOrSetCache('tasks', Task, (model) => model.find({}));
 };
 
-export const getUserTasks = async (user: Express.User | undefined) => {
-	const loggedInUser = await checkUser(user);
-
-	return Task.find({ owner: loggedInUser.id });
+export const getUserTasks = async (user: Express.User) => {
+	return Task.find({ owner: user.id });
 };
 
-export const getUserTask = async (
-	user: Express.User | undefined,
-	taskId: string
-) => {
+export const getUserTask = async (user: Express.User, taskId: string) => {
 	validateObjectIds([taskId]);
-	const loggedInUser = await checkUser(user);
 
 	const task = await Task.findOne({
-		owner: loggedInUser.id,
+		owner: user.id,
 		_id: taskId,
 	});
 
@@ -50,7 +43,7 @@ export const getTask = async (taskId: string) => {
 
 export const createTask = async (
 	taskData: createTaskDTO,
-	user: Express.User | undefined,
+	user: Express.User,
 	attachment: Express.Multer.File | undefined
 ) => {
 	const {
@@ -62,9 +55,8 @@ export const createTask = async (
 		workerId,
 		workspaceId,
 	} = taskData;
-	const loggedInUser = await checkUser(user);
 	const worker = await Member.findOne({ member: workerId });
-	const creator = await Member.findOne({ member: loggedInUser.id });
+	const creator = await Member.findOne({ member: user.id });
 	const validatedWorker = await checkResource(worker);
 	const validateCreator = await checkResource(creator);
 
@@ -78,7 +70,7 @@ export const createTask = async (
 	}
 
 	const task = await Task.create({
-		creator: loggedInUser.id,
+		creator: user.id,
 		worker: validatedWorker.id,
 		workspace: validateCreator.workspace.id,
 		dead_line,
@@ -107,15 +99,14 @@ export const createTask = async (
 export const updateTask = async (
 	taskData: updateTaskDTO,
 	taskId: string,
-	user: Express.User | undefined,
+	user: Express.User,
 	attachment: Express.Multer.File | undefined
 ) => {
 	const { priority, skill_set, dead_line } = taskData;
 	validateObjectIds([taskId]);
-	const loggedInUser = await checkUser(user);
 	const task = await findResourceById(Task, taskId);
 
-	await isResourceOwner(loggedInUser.id, task.creator.id);
+	await isResourceOwner(user.id, task.creator._id);
 
 	const updatedTask = await Task.findByIdAndUpdate(
 		task.id,
@@ -124,7 +115,7 @@ export const updateTask = async (
 			skill_set: skill_set,
 			dead_line: dead_line,
 			attachment: attachment?.path,
-			owner: loggedInUser.id,
+			owner: user.id,
 		},
 		{ new: true }
 	);
@@ -138,32 +129,27 @@ export const updateTask = async (
 	}
 };
 
-export const deleteTask = async (
-	user: Express.User | undefined,
-	taskId: string
-) => {
+export const deleteTask = async (user: Express.User, taskId: string) => {
 	validateObjectIds([taskId]);
-	const loggedInUser = await checkUser(user);
 	const task = await findResourceById(Task, taskId);
-	await isResourceOwner(loggedInUser.id, task.creator.id);
+	await isResourceOwner(user.id, task.creator._id);
 
 	await Task.findByIdAndDelete(task.id);
 
-	return 'task deleted successfully';
+	return task;
 };
 export const assignTask = async (
 	params: assignTaskParams,
-	user: Express.User | undefined
+	user: Express.User
 ) => {
 	const { taskId, workerId } = params;
 
 	validateObjectIds([taskId, workerId]);
-	const loggedInUser = await checkUser(user);
 	const task = await findResourceById(Task, taskId);
 	const creator = await Member.findOne({ member: task.creator.id });
 	const validateCreator = await checkResource(creator);
 
-	await isResourceOwner(loggedInUser.id, validateCreator.member.id);
+	await isResourceOwner(user.id, validateCreator.member.id);
 	const worker = await Member.findOne({ member: workerId });
 	const validatedWorker = await checkResource(worker);
 
@@ -196,14 +182,10 @@ export const assignTask = async (
 	}
 };
 
-export const markCompleted = async (
-	taskId: string,
-	user: Express.User | undefined
-) => {
+export const markCompleted = async (taskId: string, user: Express.User) => {
 	validateObjectIds([taskId]);
-	const loggedInUser = await checkUser(user);
 	const task = await findResourceById(Task, taskId);
-	await isResourceOwner(loggedInUser.id, task.creator.id);
+	await isResourceOwner(user.id, task.creator.id);
 
 	if (!task.worker) {
 		throw new BadRequest(

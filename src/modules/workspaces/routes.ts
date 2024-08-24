@@ -1,6 +1,7 @@
 import express from 'express';
 import {
 	getWorkSpaces,
+	getMembersOfWorkSpace,
 	createWorkSpace,
 	getWorkSpace,
 	deleteWorkSpace,
@@ -8,10 +9,12 @@ import {
 } from './controllers';
 
 const router = express.Router();
+router.route('/:workspaceId/members').get(getMembersOfWorkSpace);
 
-router.route('/').get(getWorkSpaces).post(createWorkSpace);
+router.route('/').get(getWorkSpaces).post(createWorkSpace); // TODO: routes are conflicted
+
 router
-	.route('/:id')
+	.route('/:workspaceId')
 	.get(getWorkSpace)
 	.patch(updateWorkSpace)
 	.delete(deleteWorkSpace);

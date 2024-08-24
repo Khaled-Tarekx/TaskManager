@@ -5,6 +5,7 @@ import { createWorkSpaceSchema, updateWorkSpaceSchema } from './validation';
 
 import type { TypedRequestBody } from 'zod-express-middleware';
 import * as WorkSpaceServices from './services';
+import { checkUser } from '../../utills/helpers';
 
 export const getWorkSpaces = asyncHandler(
 	async (_req: Request, res: Response) => {
@@ -15,6 +16,16 @@ export const getWorkSpaces = asyncHandler(
 	}
 );
 
+export const getMembersOfWorkSpace = asyncHandler(
+	async (req: Request, res: Response) => {
+		const { workspaceId } = req.params;
+		const members = await WorkSpaceServices.getMembersOfWorkSpace(
+			workspaceId
+		);
+		res.status(StatusCodes.OK).json({ data: members, count: members.length });
+	}
+);
+
 export const createWorkSpace = asyncHandler(
 	async (
 		req: TypedRequestBody<typeof createWorkSpaceSchema>,
@@ -22,6 +33,8 @@ export const createWorkSpace = asyncHandler(
 	) => {
 		const { name, type, description } = req.body;
 		const user = req.user;
+
+		checkUser(user);
 
 		const data = await WorkSpaceServices.createWorkSpace(
 			{ name, type, description },
@@ -36,8 +49,8 @@ export const createWorkSpace = asyncHandler(
 
 export const getWorkSpace = asyncHandler(
 	async (req: Request, res: Response) => {
-		const { workSpaceId } = req.params;
-		const work_space = await WorkSpaceServices.getWorkSpace(workSpaceId);
+		const { workspaceId } = req.params;
+		const work_space = await WorkSpaceServices.getWorkSpace(workspaceId);
 		res.status(StatusCodes.OK).json({ data: work_space });
 	}
 );
@@ -47,11 +60,13 @@ export const updateWorkSpace = asyncHandler(
 		req: TypedRequestBody<typeof updateWorkSpaceSchema>,
 		res: Response
 	) => {
-		const { workSpaceId } = req.params;
+		const { workspaceId } = req.params;
 		const { name, description, type } = req.body;
 		const user = req.user;
+		checkUser(user);
+
 		const updatedWorkSpace = await WorkSpaceServices.updateWorkSpace(
-			workSpaceId,
+			workspaceId,
 			{ name, description, type },
 			user
 		);
@@ -65,9 +80,12 @@ export const updateWorkSpace = asyncHandler(
 export const deleteWorkSpace = asyncHandler(
 	async (req: Request, res: Response) => {
 		const user = req.user;
-		const { workSpaceId } = req.params;
-
-		const msg = await WorkSpaceServices.deleteWorkSpace(workSpaceId, user);
-		res.status(StatusCodes.OK).json({ msg });
+		const { workspaceId } = req.params;
+		checkUser(user);
+		const deletedWorkspace = await WorkSpaceServices.deleteWorkSpace(
+			workspaceId,
+			user
+		);
+		res.status(StatusCodes.OK).json({ data: deletedWorkspace });
 	}
 );

@@ -37,21 +37,9 @@ export const mongooseId = z.custom<string>(
 	}
 );
 
-// export const findResourceById = async <T extends AnyParamConstructor<any>>(
-// 	model: ReturnModelType<T>,
-// 	id: string | undefined
-// ): Promise<DocumentType<T>> => {
-// 	if (!id) throw new Error('ID is required');
-
-// 	const resource = await model.findById(id);
-// 	const checkedResource = await checkResource(resource);
-
-// 	return checkedResource;
-// };
-
 export const findResourceById = async <T>(
 	model: Model<T>,
-	id: string | undefined
+	id: string | Types.ObjectId
 ): Promise<HydratedDocument<T>> => {
 	const resource = await model.findById(id);
 
@@ -60,26 +48,45 @@ export const findResourceById = async <T>(
 	return resource;
 };
 
-export const checkUser = async (
+export function checkUser(
 	user: Express.User | undefined
-): Promise<Express.User> => {
+): asserts user is Express.User {
 	if (!user) {
 		throw new UnAuthenticated('log in first to grant access');
 	}
-	return user;
-};
+}
+
 export const checkResource = async <T>(
 	resource: T | undefined | null
 ): Promise<T> => {
 	if (!resource) {
-		throw new NotFound('Resource want returned or created successfully');
+		throw new NotFound('Resource not found');
 	}
 	return resource;
 };
 
 export const validateObjectIds = (ids: string[]) => {
 	const isValidIds = ids.every((id) => Types.ObjectId.isValid(id));
+
 	if (!isValidIds) {
 		throw new BadRequest('Invalid Object Id');
 	}
+};
+
+export const isResourceOwner = async (
+	loggedInUserId: string,
+	requesterId: string | Types.ObjectId
+): Promise<Boolean> => {
+	const userIsResourceOwner = loggedInUserId === requesterId.toString();
+	if (!userIsResourceOwner) {
+		throw new UnAuthenticated(`you are not the owner of the resource`);
+	}
+	return true;
+};
+
+export const isExpired = (expiresAt: Date, createdAt: Date): Boolean => {
+	if (expiresAt.getTime() <= createdAt.getTime()) {
+		throw new NotFound('invite link already expired');
+	}
+	return true;
 };

@@ -5,14 +5,7 @@ import type { TypedRequestBody } from 'zod-express-middleware';
 import { updateMemberSchema } from './validation';
 
 import * as MemberServices from './services';
-
-export const getMembersOfWorkSpace = asyncHandler(
-	async (req: Request, res: Response) => {
-		const { workSpaceId } = req.params;
-		const members = await MemberServices.getMembersOfWorkSpace(workSpaceId);
-		res.status(StatusCodes.OK).json({ data: members, count: members.length });
-	}
-);
+import { checkUser } from '../../../utills/helpers';
 
 export const getMemberByUsername = asyncHandler(
 	async (req: Request, res: Response) => {
@@ -25,12 +18,12 @@ export const getMemberByUsername = asyncHandler(
 
 export const updateMemberPermissions = asyncHandler(
 	async (req: TypedRequestBody<typeof updateMemberSchema>, res: Response) => {
-		const { memberId, workSpaceId } = req.params;
+		const { memberId, workspaceId } = req.params;
 		const user = req.user;
 		const { role } = req.body;
-
+		checkUser(user);
 		const updatedMember = await MemberServices.updateMemberPermissions(
-			{ memberId, workSpaceId },
+			{ memberId, workspaceId },
 			user,
 			role
 		);
@@ -41,14 +34,14 @@ export const updateMemberPermissions = asyncHandler(
 
 export const deleteMember = asyncHandler(
 	async (req: Request, res: Response) => {
-		const { memberId, workSpaceId } = req.params;
+		const { memberId, workspaceId } = req.params;
 		const user = req.user;
-
-		const msg = await MemberServices.deleteMember(
-			{ memberId, workSpaceId },
+		checkUser(user);
+		const deletedMember = await MemberServices.deleteMember(
+			{ memberId, workspaceId },
 			user
 		);
 
-		res.status(StatusCodes.OK).json({ msg });
+		res.status(StatusCodes.OK).json({ data: deletedMember });
 	}
 );

@@ -1,10 +1,9 @@
-import { isResourceOwner } from '../users/helpers';
 import {
 	findResourceById,
-	checkUser,
 	validateObjectIds,
 	checkResource,
-} from '../../setup/helpers';
+	isResourceOwner,
+} from '../../utills/helpers';
 
 import type { createReplyDTO, updateReplyDTO } from './types';
 import Reply from './models';
@@ -28,40 +27,15 @@ export const getReply = async (replyId: string) => {
 	}
 };
 
-export const getUserReplies = async (user: Express.User | undefined) => {
-	const loggedInUser = await checkUser(user);
-	return Reply.find({
-		owner: loggedInUser.id,
-	});
-};
-
-export const getUserReply = async (
-	replyId: string,
-	user: Express.User | undefined
-) => {
-	try {
-		validateObjectIds([replyId]);
-		const loggedInUser = await checkUser(user);
-		const reply = await Reply.findOne({
-			_id: replyId,
-			owner: loggedInUser.id,
-		});
-		return checkResource(reply);
-	} catch (err: any) {
-		throw new Forbidden(err.message);
-	}
-};
-
 export const createReply = async (
 	replyData: createReplyDTO,
-	user: Express.User | undefined
+	user: Express.User
 ) => {
-	const { comment, parentReply, repliesOfReply, context } = replyData;
+	const { commentId, parentReply, repliesOfReply, context } = replyData;
 	try {
-		const loggedInUser = await checkUser(user);
 		const reply = await Reply.create({
-			comment,
-			owner: loggedInUser.id,
+			comment: commentId,
+			owner: user.id,
 			parentReply,
 			repliesOfReply,
 			context,
@@ -79,14 +53,13 @@ export const createReply = async (
 export const editReply = async (
 	replyData: updateReplyDTO,
 	replyId: string,
-	user: Express.User | undefined
+	user: Express.User
 ) => {
 	const { context } = replyData;
 	try {
 		validateObjectIds([replyId]);
-		const loggedInUser = await checkUser(user);
 		const reply = await findResourceById(Reply, replyId);
-		await isResourceOwner(loggedInUser.id, reply.owner.id);
+		await isResourceOwner(user.id, reply.owner._id);
 
 		const replyToUpdate = await Reply.findByIdAndUpdate(
 			reply.id,
@@ -100,23 +73,24 @@ export const editReply = async (
 	}
 };
 
-export const deleteReply = async (
-	user: Express.User | undefined,
-	replyId: string
-) => {
+export const deleteReply = async (user: Express.User, replyId: string) => {
 	try {
 		validateObjectIds([replyId]);
 
-		const loggedInUser = await checkUser(user);
 		const reply = await findResourceById(Reply, replyId);
-		await isResourceOwner(loggedInUser.id, reply.owner.id);
-		const comment = await Comment.findByIdAndUpdate(reply.comment.id, {
-			$inc: { replyCount: -1 },
-		});
+		await isResourceOwner(user.id, reply.owner._id);
+		const comment = await Comment.findByIdAndUpdate(
+			reply.comment._id.toString(),
+			{
+				$inc: { replyCount: -1 },
+			},
+			{ new: true }
+		);
+
 		await checkResource(comment);
 		await Reply.findByIdAndDelete(reply.id);
 
-		return 'reply deleted successfully';
+		return reply;
 	} catch (err: any) {
 		throw new Forbidden(err.message);
 	}
