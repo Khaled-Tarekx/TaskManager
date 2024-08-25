@@ -10,34 +10,13 @@ import * as TaskServices from './services';
 
 export const getTasks = asyncHandler(async (_req: Request, res: Response) => {
 	const tasks = await TaskServices.getTasks();
-	res.status(StatusCodes.OK).json({ data: tasks });
+	res.status(StatusCodes.OK).json({ data: tasks, count: tasks.length });
 });
 
 export const getTasksPage = asyncHandler(
 	async (_req: Request, res: Response) => {
 		const tasks = await Task.find({});
 		res.render('front_end/index', { tasks: tasks });
-	}
-);
-
-export const getUserTasks = asyncHandler(
-	async (req: Request, res: Response) => {
-		const user = req.user;
-		checkUser(user);
-		const tasks = await TaskServices.getUserTasks(user);
-
-		res.status(StatusCodes.OK).json({ data: tasks, count: tasks.length });
-	}
-);
-
-export const getUserTask = asyncHandler(
-	async (req: Request, res: Response) => {
-		const user = req.user;
-		checkUser(user);
-		const { taskId } = req.params;
-		const task = await TaskServices.getUserTask(user, taskId);
-
-		res.status(StatusCodes.OK).json({ data: task });
 	}
 );
 
@@ -59,7 +38,7 @@ export const createTask = asyncHandler(
 			priority,
 			skill_set,
 			status,
-			workerId,
+			assigneeId,
 			workspaceId,
 		} = req.body;
 		const task = await TaskServices.createTask(
@@ -69,7 +48,7 @@ export const createTask = asyncHandler(
 				priority,
 				skill_set,
 				status,
-				workerId,
+				assigneeId,
 				workspaceId,
 			},
 			user,
@@ -115,12 +94,12 @@ export const deleteTask = asyncHandler(
 
 export const assignTask = asyncHandler(
 	async (req: Request, res: Response) => {
-		const { taskId, workerId } = req.params;
+		const { taskId, assigneeId } = req.params;
 		const user = req.user;
 		checkUser(user);
-		validateObjectIds([taskId, workerId]);
+		validateObjectIds([taskId, assigneeId]);
 		const assignedTask = await TaskServices.assignTask(
-			{ taskId, workerId },
+			{ taskId, assigneeId },
 			user
 		);
 

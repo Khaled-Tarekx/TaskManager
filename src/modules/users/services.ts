@@ -2,7 +2,7 @@ import { Forbidden } from '../../custom-errors/main';
 import User from './models';
 import Reply from '../replies/models';
 import Comment from '../comments/models';
-
+import Task from '../tasks/models';
 import {
 	findResourceById,
 	validateObjectIds,
@@ -94,4 +94,19 @@ export const getUserComment = async (
 	} catch (err: any) {
 		throw new Forbidden(err.message);
 	}
+};
+
+export const getUserTasks = async (user: Express.User) => {
+	return Task.find({ owner: user.id });
+};
+
+export const getUserTask = async (user: Express.User, taskId: string) => {
+	validateObjectIds([taskId]);
+
+	const task = await Task.findOne({
+		owner: user.id,
+		_id: taskId,
+	});
+
+	return checkResource(task);
 };

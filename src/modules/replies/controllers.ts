@@ -17,7 +17,7 @@ export const getReplies = asyncHandler(
 
 export const getCommentReplies = asyncHandler(
 	async (req: Request, res: Response) => {
-		const { commentId } = req.params;
+		const { commentId } = req.query;
 		const replies = await ReplyServices.getCommentReplies(commentId);
 
 		res.status(StatusCodes.OK).json({ data: replies, count: replies.length });

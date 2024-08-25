@@ -43,9 +43,13 @@ export const createComment = async (
 			context,
 		});
 
-		const task = await Task.findByIdAndUpdate(taskId, {
-			$inc: { commentCount: 1 },
-		});
+		const task = await Task.findOneAndUpdate(
+			{ _id: comment.task._id },
+			{
+				$inc: { commentCount: 1 },
+			},
+			{ new: true }
+		);
 
 		await checkResource(task);
 		return checkResource(comment);
@@ -85,12 +89,20 @@ export const deleteComment = async (
 		validateObjectIds([commentId]);
 
 		const comment = await findResourceById(Comment, commentId);
+		console.log(comment);
 		await isResourceOwner(user.id, comment.owner._id);
-		const task = await Task.findByIdAndUpdate(comment.task.id, {
-			$inc: { commentCount: -1 },
-		});
+		console.log(comment.task._id);
+		console.log(comment.task);
+		const task = await Task.findByIdAndUpdate(
+			comment.task._id,
+			{
+				$inc: { commentCount: 1 },
+			},
+			{ new: true }
+		);
+		console.log(task);
 		await checkResource(task);
-		await Comment.findByIdAndDelete(comment.id);
+		await Comment.findByIdAndDelete(comment._id);
 
 		return comment;
 	} catch (err: any) {

@@ -9,7 +9,7 @@ import { updateMemberSchema } from './validation';
 
 const router = express.Router();
 
-router.get('/members/search', getMemberByUsername);
+router.get('/search/members', getMemberByUsername);
 
 router
 	.route('/:workspaceId/members/:memberId')

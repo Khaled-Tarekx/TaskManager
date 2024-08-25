@@ -1,6 +1,6 @@
 import { ExtractJwt, Strategy, type StrategyOptions } from 'passport-jwt';
 import passport from 'passport';
-import User from '../users/models';
+import User, { UserSchema } from '../users/models';
 import type { NextFunction, Request, Response } from 'express';
 import {
 	NotFound,
@@ -9,6 +9,7 @@ import {
 } from '../../custom-errors/main';
 import { StatusCodes } from 'http-status-codes';
 import type { Roles } from './types';
+import { InferRawDocType } from 'mongoose';
 
 const secret = process.env.SECRET_KEY;
 
@@ -18,18 +19,23 @@ const opts: StrategyOptions = {
 };
 
 passport.serializeUser((user, done) => {
-	done(null, user._id);
+	done(null, user.id);
 });
 
-passport.deserializeUser(async (id, done) => {
+type callbackType = (
+	err: CustomError | null | unknown,
+	user: InferRawDocType<UserSchema> | false
+) => void;
+
+passport.deserializeUser(async (id, done: callbackType) => {
 	try {
 		const user = await User.findById(id);
 		if (!user) {
 			throw new CustomError('user not found', StatusCodes.NOT_FOUND);
 		}
 		done(null, user);
-	} catch (err) {
-		done(err);
+	} catch (err: unknown) {
+		done(err, false);
 	}
 });
 
@@ -49,7 +55,10 @@ export default passport.use(
 			}
 			const user = await User.findById(jwt_payload.id);
 			if (!user) {
-				return done(new NotFound('user not found'), false);
+				return done(
+					new NotFound('user not authenticated or not found'),
+					false
+				);
 			} else {
 				return done(null, user);
 			}

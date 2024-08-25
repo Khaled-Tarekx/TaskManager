@@ -5,8 +5,6 @@ import {
 	createTask,
 	updateTask,
 	deleteTask,
-	getUserTasks,
-	getUserTask,
 	assignTask,
 	markCompleted,
 } from './controllers';
@@ -23,12 +21,12 @@ router
 		uploads.single('attachment'),
 		createTask
 	);
-router.route('/me').get(getUserTasks);
-router.route('/:id/owner/:assignee_id').post(assignTask);
-router.route('/:id/completed').post(markCompleted);
-router.route('/me/:id').get(getUserTask);
+
+router.route('/:taskId/owner/:assigneeId').post(assignTask);
+router.route('/:taskId/completed').post(markCompleted);
+
 router
-	.route('/:id')
+	.route('/:taskId')
 	.get(getTask)
 	.patch(
 		validateResource({ bodySchema: updateTaskSchema }),

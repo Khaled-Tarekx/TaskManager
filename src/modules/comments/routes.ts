@@ -11,13 +11,6 @@ import { createCommentSchema, updateCommentSchema } from './validation';
 
 const router = Router();
 router.get('/', getTaskComments);
-
-router.post(
-	'/',
-	validateResource({ bodySchema: createCommentSchema }),
-	createComment
-);
-
 router
 	.route('/:commentId')
 	.get(getComment)
@@ -28,5 +21,10 @@ router
 		editComment
 	)
 	.delete(deleteComment);
+router.post(
+	'/',
+	validateResource({ bodySchema: createCommentSchema }),
+	createComment
+);
 
 export default router;

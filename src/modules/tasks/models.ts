@@ -1,4 +1,9 @@
-import {getModelForClass, modelOptions, prop, type Ref} from '@typegoose/typegoose';
+import {
+	getModelForClass,
+	modelOptions,
+	prop,
+	type Ref,
+} from '@typegoose/typegoose';
 import { Types } from 'mongoose';
 import { Status } from './types';
 import { WorkSpaceSchema } from '../workspaces/models';
@@ -6,7 +11,7 @@ import { MemberSchema } from '../workspaces/models';
 import { nanoid } from 'nanoid';
 
 @modelOptions({ schemaOptions: { timestamps: true } })
-export class TaskSchema{
+export class TaskSchema {
 	@prop({ type: String, unique: true, default: () => nanoid(10) })
 	public publicId?: string;
 
@@ -20,7 +25,7 @@ export class TaskSchema{
 	public creator!: Ref<MemberSchema>;
 
 	@prop({ ref: () => MemberSchema, required: true })
-	public worker!: Ref<MemberSchema>;
+	public assignee!: Ref<MemberSchema>;
 
 	@prop({ ref: () => WorkSpaceSchema, required: true })
 	public workspace!: Ref<WorkSpaceSchema>;
@@ -28,8 +33,8 @@ export class TaskSchema{
 	@prop({ type: () => [String], required: true })
 	public skill_set!: Types.Array<string>;
 
-	@prop({ type: () => String, required: true })
-	public attachment!: string;
+	@prop({ type: () => String })
+	public attachment?: string;
 
 	@prop({ required: true })
 	public dead_line!: Date;

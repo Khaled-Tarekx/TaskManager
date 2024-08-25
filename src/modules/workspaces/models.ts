@@ -28,8 +28,8 @@ export class MemberSchema {
 	@prop({ ref: () => WorkSpaceSchema, required: true })
 	public workspace!: Ref<WorkSpaceSchema>;
 
-	@prop({ ref: UserSchema, required: true })
-	public member!: Ref<UserSchema>;
+	@prop({ ref: () => UserSchema, required: true })
+	public user!: Ref<UserSchema>;
 
 	@prop({ enum: Role, default: Role.member })
 	public role!: Role;

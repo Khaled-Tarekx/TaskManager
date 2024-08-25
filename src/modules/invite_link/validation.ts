@@ -6,8 +6,8 @@ export const createInviteSchema = z.object({
 		invalid_type_error: 'receiverId must be a string',
 	}),
 	workspaceId: z.string({
-		required_error: 'receiverId is required',
-		invalid_type_error: 'receiverId must be a string',
+		required_error: 'workspaceId is required',
+		invalid_type_error: 'workspaceId must be a string',
 	}),
 });
 

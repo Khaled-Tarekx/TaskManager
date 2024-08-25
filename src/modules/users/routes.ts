@@ -9,6 +9,8 @@ import {
 	getUserReply,
 	getUserComment,
 	getUserComments,
+	getUserTasks,
+	getUserTask,
 } from './controllers';
 import { updateUserSchema } from './validations';
 
@@ -18,7 +20,8 @@ router.get('/', getUsers);
 
 router.get('/replies/me/:replyId', getUserReply);
 router.get('/replies/me', getUserReplies);
-
+router.get('/tasks/me', getUserTasks);
+router.get('/tasks/me/:id', getUserTask);
 router.route('/comments/me/:commentId').get(getUserComment);
 router.route('/comments/me').get(getUserComments);
 

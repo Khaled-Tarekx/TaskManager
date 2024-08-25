@@ -34,8 +34,8 @@ export const notifyUserOfUpcomingDeadline = async (task: TaskSchema) => {
 
 export const sendNotification = async (message: string, task: TaskSchema) => {
 	try {
-		const member = await findResourceById(Member, task.worker.id);
-		const user = await findResourceById(User, member.member.id);
+		const member = await findResourceById(Member, task.assignee.id);
+		const user = await findResourceById(User, member.user.id);
 
 		await emailQueue.add({
 			to: `${user.email}`,

@@ -6,8 +6,7 @@ import type { TypedRequestBody } from 'zod-express-middleware';
 import type { createCommentSchema, updateCommentSchema } from './validation';
 import * as CommentServices from './services';
 import { checkUser } from '../../utills/helpers';
-
-type taskParam = { taskId: string };
+import { taskParam } from './types';
 
 export const getTaskComments = asyncHandler(
 	async (req: Request<{}, {}, {}, taskParam>, res: Response) => {

@@ -1,7 +1,12 @@
 import z from 'zod';
 import { client } from '../../main';
 import { Types, Model, type HydratedDocument } from 'mongoose';
-import { NotFound, UnAuthenticated, BadRequest } from '../custom-errors/main';
+import {
+	NotFound,
+	UnAuthenticated,
+	BadRequest,
+	Forbidden,
+} from '../custom-errors/main';
 
 const DEFAULT_EXPIRATION = process.env.DEFAULT_EXPIRATION_CASHE;
 
@@ -43,8 +48,9 @@ export const findResourceById = async <T>(
 ): Promise<HydratedDocument<T>> => {
 	const resource = await model.findById(id);
 
-	if (!resource)
+	if (!resource) {
 		throw new NotFound(`the resource you are trying to access is not found`);
+	}
 	return resource;
 };
 
@@ -81,6 +87,20 @@ export const isResourceOwner = async (
 	if (!userIsResourceOwner) {
 		throw new UnAuthenticated(`you are not the owner of the resource`);
 	}
+	return true;
+};
+
+export const compareMembersWorkspace = async (
+	member: Types.ObjectId,
+	memberToCompare: Types.ObjectId
+): Promise<Boolean> => {
+	const isSameWorkspace = member || memberToCompare;
+	if (!isSameWorkspace) {
+		throw new Forbidden(
+			'Creator or assignee does not belong to this workspace'
+		);
+	}
+
 	return true;
 };
 

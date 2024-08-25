@@ -9,9 +9,9 @@ import {
 } from './controllers';
 
 const router = express.Router();
-router.route('/:workspaceId/members').get(getMembersOfWorkSpace);
+router.route('/members/:workspaceId/').get(getMembersOfWorkSpace);
 
-router.route('/').get(getWorkSpaces).post(createWorkSpace); // TODO: routes are conflicted
+router.route('/').get(getWorkSpaces).post(createWorkSpace);
 
 router
 	.route('/:workspaceId')

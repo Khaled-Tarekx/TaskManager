@@ -13,7 +13,7 @@ import { Forbidden } from '../../custom-errors/main';
 export const getReplies = async () => {
 	return Reply.find({});
 };
-export const getCommentReplies = async (commentId: string) => {
+export const getCommentReplies = async <T>(commentId: T) => {
 	return Reply.find({ comment: commentId });
 };
 
@@ -40,7 +40,7 @@ export const createReply = async (
 			repliesOfReply,
 			context,
 		});
-		const commentData = await Comment.findByIdAndUpdate(reply.comment.id, {
+		const commentData = await Comment.findByIdAndUpdate(reply.comment._id, {
 			$inc: { replyCount: 1 },
 		});
 		await checkResource(commentData);
@@ -62,7 +62,7 @@ export const editReply = async (
 		await isResourceOwner(user.id, reply.owner._id);
 
 		const replyToUpdate = await Reply.findByIdAndUpdate(
-			reply.id,
+			reply._id,
 			{ context },
 			{ new: true }
 		);
@@ -80,7 +80,7 @@ export const deleteReply = async (user: Express.User, replyId: string) => {
 		const reply = await findResourceById(Reply, replyId);
 		await isResourceOwner(user.id, reply.owner._id);
 		const comment = await Comment.findByIdAndUpdate(
-			reply.comment._id.toString(),
+			reply.comment._id,
 			{
 				$inc: { replyCount: -1 },
 			},
@@ -88,7 +88,7 @@ export const deleteReply = async (user: Express.User, replyId: string) => {
 		);
 
 		await checkResource(comment);
-		await Reply.findByIdAndDelete(reply.id);
+		await Reply.findByIdAndDelete(reply._id);
 
 		return reply;
 	} catch (err: any) {

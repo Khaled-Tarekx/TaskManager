@@ -7,7 +7,7 @@ import {
 	isExpired,
 } from '../../utills/helpers';
 import { WorkSpace, Member } from '../workspaces/models';
-import type { acceptInviteDTO, createInviteDTO } from './types';
+import type { createInviteDTO } from './types';
 import { Role } from '../workspaces/members/types';
 
 export const createInviteLink = async (
@@ -21,7 +21,7 @@ export const createInviteLink = async (
 			Member,
 			workspace.owner._id
 		);
-		await isResourceOwner(user.id, workspaceOwner.member._id);
+		await isResourceOwner(user.id, workspaceOwner.user._id);
 
 		const invitation = await InviteLink.create({
 			receiver: receiverId,
@@ -38,11 +38,10 @@ export const acceptInvitation = async (token: string) => {
 		const invitation = await InviteLink.findOne({
 			token,
 		});
-
 		const validatedResource = await checkResource(invitation);
 		isExpired(validatedResource.expiresAt, validatedResource.createdAt);
 		const member = await Member.create({
-			member: validatedResource.receiver._id,
+			user: validatedResource.receiver._id,
 			workspace: validatedResource.workspace._id,
 			role: Role.member,
 		});

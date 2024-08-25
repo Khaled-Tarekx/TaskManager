@@ -13,7 +13,7 @@ import { Forbidden } from '../../custom-errors/main';
 export const getCommentLikes = async (commentId: string) => {
 	try {
 		validateObjectIds([commentId]);
-		return CommentLike.find({ reply: commentId });
+		return CommentLike.find({ comment: commentId });
 	} catch (err: any) {
 		throw new Forbidden(err.message);
 	}
@@ -52,7 +52,7 @@ export const createCommentLike = async (
 			owner: user.id,
 			comment: commentId,
 		});
-		const comment = await Comment.findByIdAndUpdate(commentLike.comment.id, {
+		const comment = await Comment.findByIdAndUpdate(commentLike.comment._id, {
 			$inc: { likeCount: 1 },
 		});
 		await checkResource(comment);
@@ -71,13 +71,13 @@ export const deleteCommentLike = async (
 		const commentLikeToDelete = await findResourceById(CommentLike, likeId);
 		await isResourceOwner(user.id, commentLikeToDelete.owner._id);
 		const comment = await Comment.findByIdAndUpdate(
-			commentLikeToDelete.comment.id,
+			commentLikeToDelete.comment._id,
 			{
 				$inc: { likeCount: -1 },
 			}
 		);
 		await checkResource(comment);
-		await CommentLike.findByIdAndDelete(commentLikeToDelete.id);
+		await CommentLike.findByIdAndDelete(commentLikeToDelete._id);
 		return commentLikeToDelete;
 	} catch (err: any) {
 		throw new Forbidden(err.message);

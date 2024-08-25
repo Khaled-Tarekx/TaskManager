@@ -56,7 +56,7 @@ export const createReplyLike = async (
 			owner: user.id,
 			reply: replyId,
 		});
-		const reply = await Reply.findByIdAndUpdate(replyLike.reply.id, {
+		const reply = await Reply.findByIdAndUpdate(replyLike.reply._id, {
 			$inc: { likeCount: 1 },
 		});
 		await checkResource(reply);
@@ -71,7 +71,7 @@ export const deleteReplyLike = async (likeId: string, user: Express.User) => {
 		validateObjectIds([likeId]);
 		const replyLikeToDelete = await findResourceById(ReplyLike, likeId);
 		await isResourceOwner(user.id, replyLikeToDelete.owner._id);
-		const reply = await Reply.findByIdAndUpdate(replyLikeToDelete.reply.id, {
+		const reply = await Reply.findByIdAndUpdate(replyLikeToDelete.reply._id, {
 			$inc: { likeCount: -1 },
 		});
 

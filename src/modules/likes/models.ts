@@ -1,4 +1,9 @@
-import {getModelForClass, modelOptions, prop, type Ref} from '@typegoose/typegoose';
+import {
+	getModelForClass,
+	modelOptions,
+	prop,
+	type Ref,
+} from '@typegoose/typegoose';
 import { CommentSchema } from '../comments/models';
 import { UserSchema } from '../users/models';
 import { ReplySchema } from '../replies/models';
@@ -12,6 +17,7 @@ class CommentLikeSchema {
 	public owner!: Ref<UserSchema>;
 }
 
+@modelOptions({ schemaOptions: { timestamps: true } })
 class ReplyLikeSchema {
 	@prop({ ref: () => ReplySchema, required: true })
 	public reply!: Ref<ReplySchema>;

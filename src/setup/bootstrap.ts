@@ -43,10 +43,10 @@ const bootstrap = (app: Application) => {
 
 	app.use(authentication);
 	app.use('/api/v1/users', UserRouter);
+	app.use('/api/v1/invitation', InvitationRouter);
 	app.use('/api/v1/workspaces', WorkSpaceRouter);
 	app.use('/api/v1/workspaces', MembersRouter);
 	app.use('/api/v1/tasks', TaskRouter);
-	app.use('/api/v1/invitation', InvitationRouter);
 	app.use('/api/v1/comments', CommentRouter);
 	app.use('/api/v1/replies', ReplyRouter);
 	app.use('/api/v1/likes', LikeRouter);

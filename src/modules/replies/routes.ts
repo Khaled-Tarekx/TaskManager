@@ -16,7 +16,7 @@ router
 	.get(getReplies)
 	.post(validateResource({ bodySchema: createReplySchema }), createReply);
 
-router.get('/:commentId', getCommentReplies);
+router.get('/comments', getCommentReplies);
 
 router
 	.route('/:replyId')

@@ -84,3 +84,24 @@ export const getUserComment = asyncHandler(
 		res.status(StatusCodes.OK).json({ data: userComment });
 	}
 );
+
+export const getUserTasks = asyncHandler(
+	async (req: Request, res: Response) => {
+		const user = req.user;
+		checkUser(user);
+		const tasks = await UserServices.getUserTasks(user);
+
+		res.status(StatusCodes.OK).json({ data: tasks, count: tasks.length });
+	}
+);
+
+export const getUserTask = asyncHandler(
+	async (req: Request, res: Response) => {
+		const user = req.user;
+		checkUser(user);
+		const { taskId } = req.params;
+		const task = await UserServices.getUserTask(user, taskId);
+
+		res.status(StatusCodes.OK).json({ data: task });
+	}
+);

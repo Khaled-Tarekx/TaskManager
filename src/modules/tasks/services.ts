@@ -4,9 +4,9 @@ import { notifyUserOfUpcomingDeadline } from './utills';
 import {
 	checkResource,
 	findResourceById,
-	getOrSetCache,
 	validateObjectIds,
 	isResourceOwner,
+	compareMembersWorkspace,
 } from '../../utills/helpers';
 
 import {
@@ -16,25 +16,12 @@ import {
 	type updateTaskDTO,
 } from './types';
 import { Member } from '../workspaces/models';
-
+import mongoose, { Types } from 'mongoose';
+import { ObjectId } from 'mongodb';
 export const getTasks = async () => {
-	return getOrSetCache('tasks', Task, (model) => model.find({}));
+	return Task.find({});
 };
-
-export const getUserTasks = async (user: Express.User) => {
-	return Task.find({ owner: user.id });
-};
-
-export const getUserTask = async (user: Express.User, taskId: string) => {
-	validateObjectIds([taskId]);
-
-	const task = await Task.findOne({
-		owner: user.id,
-		_id: taskId,
-	});
-
-	return checkResource(task);
-};
+// return getOrSetCache('tasks', Task, (model) => model.find({}));
 
 export const getTask = async (taskId: string) => {
 	validateObjectIds([taskId]);
@@ -52,27 +39,28 @@ export const createTask = async (
 		priority,
 		skill_set,
 		status,
-		workerId,
+		assigneeId,
 		workspaceId,
 	} = taskData;
-	const worker = await Member.findOne({ member: workerId });
-	const creator = await Member.findOne({ member: user.id });
-	const validatedWorker = await checkResource(worker);
+	const assignee = await Member.findOne({
+		_id: assigneeId,
+		workspace: workspaceId,
+	});
+	const validatedAssignee = await checkResource(assignee);
+	const creator = await Member.findOne({
+		user: user.id,
+		workspace: workspaceId,
+	});
 	const validateCreator = await checkResource(creator);
 
-	if (
-		validatedWorker.workspace.id !== workspaceId ||
-		validateCreator.workspace.id !== workspaceId
-	) {
-		throw new Forbidden(
-			'Creator or worker does not belong to this workspace'
-		);
-	}
-
+	await compareMembersWorkspace(
+		validatedAssignee.workspace._id,
+		validateCreator.workspace._id
+	);
 	const task = await Task.create({
-		creator: user.id,
-		worker: validatedWorker.id,
-		workspace: validateCreator.workspace.id,
+		creator: validateCreator._id,
+		assignee: validatedAssignee._id,
+		workspace: validateCreator.workspace._id,
 		dead_line,
 		dependants,
 		priority,
@@ -80,20 +68,20 @@ export const createTask = async (
 		status,
 		attachment: attachment?.path,
 	});
-	const validatedResource = await checkResource(task);
-	if (worker) {
-		validatedResource.status = Status.InProgress;
-		validatedResource.worker.id = worker;
-		await validatedResource.save();
+	const validatedTask = await checkResource(task);
+	if (validatedAssignee) {
+		validatedTask.status = Status.InProgress;
+		validatedTask.assignee = validatedAssignee;
+		await validatedTask.save();
 		try {
-			await notifyUserOfUpcomingDeadline(validatedResource);
+			await notifyUserOfUpcomingDeadline(validatedTask);
 		} catch (err: any) {
 			throw new BadRequest(
 				`Error notifying user of upcoming deadline: ${err.message}`
 			);
 		}
 	}
-	return validatedResource;
+	return validatedTask;
 };
 
 export const updateTask = async (
@@ -105,8 +93,9 @@ export const updateTask = async (
 	const { priority, skill_set, dead_line } = taskData;
 	validateObjectIds([taskId]);
 	const task = await findResourceById(Task, taskId);
+	const creator = await findResourceById(Member, task.creator._id);
 
-	await isResourceOwner(user.id, task.creator._id);
+	await isResourceOwner(user.id, creator.user._id);
 
 	const updatedTask = await Task.findByIdAndUpdate(
 		task.id,
@@ -120,10 +109,10 @@ export const updateTask = async (
 		{ new: true }
 	);
 
-	const validatedResource = await checkResource(updatedTask);
+	const validatedTask = await checkResource(updatedTask);
 	try {
-		await notifyUserOfUpcomingDeadline(validatedResource);
-		return validatedResource;
+		await notifyUserOfUpcomingDeadline(validatedTask);
+		return validatedTask;
 	} catch (err: any) {
 		throw new Forbidden(err.message);
 	}
@@ -132,7 +121,9 @@ export const updateTask = async (
 export const deleteTask = async (user: Express.User, taskId: string) => {
 	validateObjectIds([taskId]);
 	const task = await findResourceById(Task, taskId);
-	await isResourceOwner(user.id, task.creator._id);
+	const creator = await findResourceById(Member, task.creator._id);
+
+	await isResourceOwner(user.id, creator.user._id);
 
 	await Task.findByIdAndDelete(task.id);
 
@@ -142,41 +133,36 @@ export const assignTask = async (
 	params: assignTaskParams,
 	user: Express.User
 ) => {
-	const { taskId, workerId } = params;
+	const { taskId, assigneeId } = params;
 
-	validateObjectIds([taskId, workerId]);
+	validateObjectIds([taskId, assigneeId]);
 	const task = await findResourceById(Task, taskId);
-	const creator = await Member.findOne({ member: task.creator.id });
-	const validateCreator = await checkResource(creator);
+	const creator = await findResourceById(Member, task.creator._id);
 
-	await isResourceOwner(user.id, validateCreator.member.id);
-	const worker = await Member.findOne({ member: workerId });
-	const validatedWorker = await checkResource(worker);
+	await isResourceOwner(user.id, creator.user._id);
+	const assignee = await Member.findOne({ user: assigneeId });
+	const validatedAssignee = await checkResource(assignee);
 
-	if (
-		validatedWorker.workspace.id !== task.workspace.id ||
-		validateCreator.workspace.id !== task.workspace.id
-	) {
-		throw new Forbidden(
-			'Creator or worker does not belong to this workspace'
-		);
-	}
+	await compareMembersWorkspace(
+		validatedAssignee.workspace._id,
+		creator.workspace._id
+	);
 	const assignedTask = await Task.findByIdAndUpdate(
 		task.id,
-		{ worker: validatedWorker.id, status: 'inProgress' },
+		{ worker: validatedAssignee._id, status: 'inProgress' },
 		{ new: true }
 	).populate({
-		path: 'worker',
+		path: 'assignee',
 		populate: {
-			path: 'member',
+			path: 'user',
 			select: 'email position',
 		},
 	});
 
-	const validatedResource = await checkResource(assignedTask);
+	const validatedTask = await checkResource(assignedTask);
 	try {
-		await notifyUserOfUpcomingDeadline(validatedResource);
-		return validatedResource;
+		await notifyUserOfUpcomingDeadline(validatedTask);
+		return validatedTask;
 	} catch (err: any) {
 		throw new Forbidden(err.message);
 	}
@@ -185,9 +171,11 @@ export const assignTask = async (
 export const markCompleted = async (taskId: string, user: Express.User) => {
 	validateObjectIds([taskId]);
 	const task = await findResourceById(Task, taskId);
-	await isResourceOwner(user.id, task.creator.id);
+	const creator = await findResourceById(Member, task.creator._id);
 
-	if (!task.worker) {
+	await isResourceOwner(user.id, creator.user._id);
+
+	if (!task.assignee) {
 		throw new BadRequest(
 			`task must be assigned to a user first before` +
 				` marking it as completed, task is ${task.status}`
@@ -214,16 +202,16 @@ export const markCompleted = async (taskId: string, user: Express.User) => {
 		{ new: true }
 	);
 
-	const validatedResource = await checkResource(taskToMark);
+	const validatedTask = await checkResource(taskToMark);
 
 	await Task.updateMany(
 		{ dependants: task.id },
 		{ $pull: { dependants: task.id } }
 	);
 
-	if (validatedResource.status === 'completed') {
+	if (validatedTask.status === 'completed') {
 		throw new BadRequest(`task already marked as completed before`);
 	}
 
-	return validatedResource;
+	return validatedTask;
 };

@@ -3,6 +3,7 @@ import type { updateMemberSchema, createMemberSchema } from './validation';
 export enum Role {
 	member = 'member',
 	owner = 'owner',
+	admin = 'admin',
 }
 
 export type deleteMemberParams = {
