@@ -24,12 +24,12 @@ export const createInviteLink = async (
 	const workspace = await findResourceById(
 		WorkSpace,
 		workspaceId,
-		new WorkspaceNotFound('workspace to invite to not found')
+		WorkspaceNotFound
 	);
 	const workspaceOwner = await findResourceById(
 		Member,
 		workspace.owner._id,
-		new WorkspaceOwnerNotFound('workspace owner not found')
+		WorkspaceOwnerNotFound
 	);
 	await isResourceOwner(user.id, workspaceOwner.user._id);
 
@@ -37,7 +37,7 @@ export const createInviteLink = async (
 		receiver: receiverId,
 		workspace: workspaceId,
 	});
-	checkResource(invitation, new InviteFailed('invitation failed to create'));
+	checkResource(invitation, InviteFailed);
 	return invitation;
 };
 
@@ -45,10 +45,7 @@ export const acceptInvitation = async (token: string) => {
 	const invitation = await InviteLink.findOne({
 		token,
 	});
-	checkResource(
-		invitation,
-		new inviteLinkNotFound('invite link was not found, token not correct?')
-	);
+	checkResource(invitation, inviteLinkNotFound);
 	isExpired(invitation.expiresAt, invitation.createdAt);
 	const member = await Member.create({
 		user: invitation.receiver._id,
@@ -56,9 +53,6 @@ export const acceptInvitation = async (token: string) => {
 		role: Role.member,
 	});
 
-	checkResource(
-		member,
-		new MemberCreationFailed('membership creation failed')
-	);
+	checkResource(member, MemberCreationFailed);
 	return member;
 };

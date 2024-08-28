@@ -25,34 +25,25 @@ export const createUser = async (userData: createUserDTO) => {
 		password: hashedPassword,
 		position,
 	});
-	checkResource(user, new RegistrationError('all fields must be entered'));
+	checkResource(user, RegistrationError);
 	return user;
 };
 export const login = async (loginData: loginDTO) => {
 	const { email, password } = loginData;
 	const user = await User.findOne({ email });
-	checkResource(
-		user,
-		new UserNotFound('user not found with the given email')
-	);
+	checkResource(user, UserNotFound);
 	const isCorrectPassword = await comparePassword(password, user.password);
 	if (!isCorrectPassword || !user) {
-		throw new LoginError('either password or email is incorrect');
+		throw LoginError;
 	}
 	const updatedUser = await User.findOneAndUpdate(
 		{ email: user.email },
 		{ isLoggedIn: true },
 		{ new: true }
 	);
-	checkResource(
-		updatedUser,
-		new UserNotFound('couldnt find user with the given email')
-	);
+	checkResource(updatedUser, UserNotFound);
 
 	const token = await createTokenFromUser(user);
-	checkResource(
-		token,
-		new TokenCreationFailed('failed to create the token ')
-	);
+	checkResource(token, TokenCreationFailed);
 	return token;
 };

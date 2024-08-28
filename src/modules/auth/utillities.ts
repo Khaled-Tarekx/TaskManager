@@ -1,10 +1,6 @@
 import User, { UserSchema } from '../users/models';
 import jwt from 'jsonwebtoken';
-import {
-	CustomError,
-	NotFound,
-	AuthenticationError,
-} from '../../custom-errors/main';
+import { CustomError } from '../../custom-errors/main';
 import { type AnyZodObject, ZodError } from 'zod';
 import type { NextFunction, Request, Response } from 'express';
 import { asyncHandler } from './middleware';
@@ -15,7 +11,6 @@ import {
 	PasswordHashingError,
 	UserNotFound,
 } from './errors/cause';
-import { UserNotFoundMSG } from './errors/msg';
 
 const secret = process.env.SECRET_KEY;
 
@@ -25,7 +20,7 @@ export const createTokenFromUser = async (
 	const tokenUser = await User.findOne({ email: user.email });
 
 	if (!tokenUser) {
-		throw new UserNotFound(UserNotFoundMSG);
+		throw UserNotFound;
 	}
 
 	return jwt.sign({ id: tokenUser.id, roles: tokenUser.roles }, secret, {

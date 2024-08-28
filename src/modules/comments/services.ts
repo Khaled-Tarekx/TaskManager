@@ -23,13 +23,7 @@ export const getTaskComments = async (taskId: string) => {
 
 export const getComment = async (commentId: string) => {
 	validateObjectIds([commentId]);
-	const comment = await findResourceById(
-		Comment,
-		commentId,
-		new CommentNotFound(
-			'couldnt find the comment correctly, maybe check the given id'
-		)
-	);
+	const comment = await findResourceById(Comment, commentId, CommentNotFound);
 	return comment;
 };
 
@@ -45,12 +39,7 @@ export const createComment = async (
 		context,
 	});
 
-	checkResource(
-		comment,
-		new CommentCreationFailed(
-			'comment failed at creation , maybe check the given input'
-		)
-	);
+	checkResource(comment, CommentCreationFailed);
 
 	const task = await Task.findOneAndUpdate(
 		{ _id: comment.task._id },
@@ -60,10 +49,7 @@ export const createComment = async (
 		{ new: true }
 	);
 
-	checkResource(
-		task,
-		new CommentCountUpdateFailed('comment count failed to update in the task')
-	);
+	checkResource(task, CommentCountUpdateFailed);
 
 	return comment;
 };
@@ -75,13 +61,7 @@ export const editComment = async (
 ) => {
 	const { context } = commentData;
 	validateObjectIds([commentId]);
-	const comment = await findResourceById(
-		Comment,
-		commentId,
-		new CommentNotFound(
-			'couldnt find the comment correctly, maybe check the given id'
-		)
-	);
+	const comment = await findResourceById(Comment, commentId, CommentNotFound);
 	await isResourceOwner(user.id, comment.owner._id);
 
 	const commentToUpdate = await Comment.findByIdAndUpdate(
@@ -90,12 +70,7 @@ export const editComment = async (
 		{ new: true }
 	);
 
-	return checkResource(
-		commentToUpdate,
-		new CommentUpdateFailed(
-			'couldnt edit the comment correctly, maybe check the given id'
-		)
-	);
+	return checkResource(commentToUpdate, CommentUpdateFailed);
 };
 
 export const deleteComment = async (
@@ -104,11 +79,7 @@ export const deleteComment = async (
 ) => {
 	validateObjectIds([commentId]);
 
-	const comment = await findResourceById(
-		Comment,
-		commentId,
-		new CommentNotFound('couldnt find the requested comment')
-	);
+	const comment = await findResourceById(Comment, commentId, CommentNotFound);
 	await isResourceOwner(user.id, comment.owner._id);
 
 	const task = await Task.findByIdAndUpdate(
@@ -118,13 +89,10 @@ export const deleteComment = async (
 		},
 		{ new: true }
 	);
-	checkResource(
-		task,
-		new CommentCountUpdateFailed('comment count failed to update in the task')
-	);
+	checkResource(task, CommentCountUpdateFailed);
 	const commentToDelete = await Comment.findByIdAndDelete(comment._id);
 	if (!commentToDelete) {
-		throw new CommentDeletionFailed('comment failed in the deleting process');
+		throw new CommentDeletionFailed();
 	}
 
 	return comment;

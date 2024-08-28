@@ -6,7 +6,6 @@ import * as AuthServices from './services';
 import {
 	LoginError,
 	PasswordHashingError,
-	PasswordNotFound,
 	RegistrationError,
 	TokenCreationFailed,
 	UserNotFound,
@@ -66,8 +65,6 @@ export const login = async (
 				next(new AuthenticationError(LoginErrorMsg));
 			case err instanceof UserNotFound:
 				next(new NotFound(UserNotFoundMSG));
-			case err instanceof PasswordNotFound:
-				next(new AuthenticationError(IncorrectPasswordMsg));
 			case err instanceof TokenCreationFailed:
 				next(new AuthenticationError(TokenGenerationErrorMsg));
 			default:
