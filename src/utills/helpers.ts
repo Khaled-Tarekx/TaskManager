@@ -46,12 +46,12 @@ export const mongooseId = z.custom<string>(
 export const findResourceById = async <T>(
 	model: Model<T>,
 	id: string | Types.ObjectId,
-	resourceNotFound: Error
+	serviceError: new () => Error
 ): Promise<HydratedDocument<T>> => {
 	const resource = await model.findById(id);
 
 	if (!resource) {
-		throw resourceNotFound;
+		throw new serviceError();
 	}
 	return resource;
 };
@@ -66,10 +66,10 @@ export function checkUser(
 
 export function checkResource<T>(
 	resource: T | undefined | null,
-	serviceError: Error
+	serviceError: new () => Error
 ): asserts resource is T {
 	if (!resource) {
-		throw serviceError;
+		throw new serviceError();
 	}
 }
 

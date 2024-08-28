@@ -14,13 +14,6 @@ import {
 	ReplyNotFound,
 	ReplyUpdateFailed,
 } from './errors/cause';
-import {
-	ReplyCountFailedMsg,
-	ReplyCreationFailedMSG,
-	ReplyDeletionFailedMSG,
-	ReplyEditingFailedMSG,
-	ReplyNotFoundMSG,
-} from './errors/msg';
 
 export const getReplies = async () => {
 	return Reply.find({});
@@ -31,11 +24,7 @@ export const getCommentReplies = async <T>(commentId: T) => {
 
 export const getReply = async (replyId: string) => {
 	validateObjectIds([replyId]);
-	const reply = await findResourceById(
-		Reply,
-		replyId,
-		new ReplyNotFound(ReplyNotFoundMSG)
-	);
+	const reply = await findResourceById(Reply, replyId, ReplyNotFound);
 	return reply;
 };
 
@@ -51,12 +40,12 @@ export const createReply = async (
 		repliesOfReply,
 		context,
 	});
-	checkResource(reply, new ReplyCreationFailed(ReplyCreationFailedMSG));
+	checkResource(reply, ReplyCreationFailed);
 
 	const commentData = await Comment.findByIdAndUpdate(reply.comment._id, {
 		$inc: { replyCount: 1 },
 	});
-	checkResource(commentData, new ReplyCountUpdateFailed(ReplyCountFailedMsg));
+	checkResource(commentData, ReplyCountUpdateFailed);
 	return reply;
 };
 
@@ -67,11 +56,7 @@ export const editReply = async (
 ) => {
 	const { context } = replyData;
 	validateObjectIds([replyId]);
-	const reply = await findResourceById(
-		Reply,
-		replyId,
-		new ReplyNotFound(ReplyNotFoundMSG)
-	);
+	const reply = await findResourceById(Reply, replyId, ReplyNotFound);
 	await isResourceOwner(user.id, reply.owner._id);
 
 	const replyToUpdate = await Reply.findByIdAndUpdate(
@@ -80,18 +65,14 @@ export const editReply = async (
 		{ new: true }
 	);
 
-	checkResource(replyToUpdate, new ReplyUpdateFailed(ReplyEditingFailedMSG));
+	checkResource(replyToUpdate, ReplyUpdateFailed);
 	return replyToUpdate;
 };
 
 export const deleteReply = async (user: Express.User, replyId: string) => {
 	validateObjectIds([replyId]);
 
-	const reply = await findResourceById(
-		Reply,
-		replyId,
-		new ReplyNotFound(ReplyNotFoundMSG)
-	);
+	const reply = await findResourceById(Reply, replyId, ReplyNotFound);
 	await isResourceOwner(user.id, reply.owner._id);
 	const comment = await Comment.findByIdAndUpdate(
 		reply.comment._id,
@@ -101,11 +82,11 @@ export const deleteReply = async (user: Express.User, replyId: string) => {
 		{ new: true }
 	);
 
-	checkResource(comment, new ReplyCountUpdateFailed(ReplyCountFailedMsg));
+	checkResource(comment, ReplyCountUpdateFailed);
 
 	const replyToDelete = await Reply.findByIdAndDelete(reply._id);
 	if (!replyToDelete) {
-		throw new ReplyDeletionFailed(ReplyDeletionFailedMSG);
+		throw new ReplyDeletionFailed();
 	}
 	return reply;
 };

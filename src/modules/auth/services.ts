@@ -12,12 +12,6 @@ import {
 	TokenCreationFailed,
 	UserNotFound,
 } from './errors/cause';
-import {
-	LoginErrorMsg,
-	TokenGenerationErrorMsg,
-	UserNotFoundMSG,
-	UserRegistraionFailedMSG,
-} from './errors/msg';
 
 const saltRounds = process.env.SALT_ROUNTS;
 
@@ -31,26 +25,34 @@ export const createUser = async (userData: createUserDTO) => {
 		password: hashedPassword,
 		position,
 	});
-	checkResource(user, error);
+	checkResource(user, new RegistrationError('all fields must be entered'));
 	return user;
 };
-const error = new RegistrationError('all fields must be entered');
 export const login = async (loginData: loginDTO) => {
 	const { email, password } = loginData;
 	const user = await User.findOne({ email });
-	checkResource(user, new UserNotFound(UserNotFoundMSG));
+	checkResource(
+		user,
+		new UserNotFound('user not found with the given email')
+	);
 	const isCorrectPassword = await comparePassword(password, user.password);
 	if (!isCorrectPassword || !user) {
-		throw new LoginError(LoginErrorMsg);
+		throw new LoginError('either password or email is incorrect');
 	}
 	const updatedUser = await User.findOneAndUpdate(
 		{ email: user.email },
 		{ isLoggedIn: true },
 		{ new: true }
 	);
-	checkResource(updatedUser, new UserNotFound(UserNotFoundMSG));
+	checkResource(
+		updatedUser,
+		new UserNotFound('couldnt find user with the given email')
+	);
 
 	const token = await createTokenFromUser(user);
-	checkResource(token, new TokenCreationFailed(TokenGenerationErrorMsg));
+	checkResource(
+		token,
+		new TokenCreationFailed('failed to create the token ')
+	);
 	return token;
 };
