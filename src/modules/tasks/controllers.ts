@@ -7,6 +7,7 @@ import { type TypedRequestBody } from 'zod-express-middleware';
 import { createTaskSchema, updateTaskSchema } from './validation';
 
 import * as TaskServices from './services';
+import Forbidden from 'src/custom-errors/forbidden';
 
 export const getTasks = asyncHandler(async (_req: Request, res: Response) => {
 	const tasks = await TaskServices.getTasks();
@@ -109,12 +110,12 @@ export const assignTask = asyncHandler(
 	}
 );
 
-export const markCompleted = asyncHandler(
-	async (req: Request, res: Response) => {
-		const { taskId } = req.params;
+export const markCompleted = async (req: Request, res: Response) => {
+	const { taskId } = req.params;
+	try {
 		const user = req.user;
 		checkUser(user);
 		const markedTask = await TaskServices.markCompleted(taskId, user);
 		res.status(StatusCodes.OK).json({ data: markedTask });
-	}
-);
+	} catch (err: unknown) {}
+};

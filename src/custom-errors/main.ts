@@ -1,7 +1,15 @@
 import CustomError from './custom-error';
 import NotFound from './not-found';
-import UnAuthenticated from './unauthenticated';
-import BadRequest from './bad-request';
+import AuthenticationError from './unauthenticated';
+import BadRequestError from './bad-request';
 import Forbidden from './forbidden';
+import Conflict from './conflict';
 
-export { UnAuthenticated, NotFound, BadRequest, CustomError, Forbidden };
+export {
+	AuthenticationError,
+	NotFound,
+	BadRequestError,
+	CustomError,
+	Forbidden,
+	Conflict,
+};

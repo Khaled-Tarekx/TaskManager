@@ -6,7 +6,7 @@ import UserRouter from '../modules/users/routes';
 import AuthRouter from '../modules/auth/routes';
 import TaskRouter from '../modules/tasks/routes';
 import CommentRouter from '../modules/comments/routes';
-import ReplyRouter from '../modules/replies/routes';
+import ReplyRouter from '../modules/comments/replies/routes';
 import LikeRouter from '../modules/likes/routes';
 import InvitationRouter from '../modules/invite_link/routes';
 import WorkSpaceRouter from '../modules/workspaces/routes';

@@ -1,4 +1,4 @@
-import { mongooseId } from '../../utills/helpers';
+import { mongooseId } from '../../../utills/helpers';
 
 import z from 'zod';
 

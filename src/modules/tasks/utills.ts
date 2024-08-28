@@ -1,7 +1,7 @@
 import User from '../users/models';
 import moment from 'moment';
 import { TaskSchema } from './models';
-import { BadRequest } from '../../custom-errors/main';
+import { BadRequestError } from '../../custom-errors/main';
 import emailQueue from './queue';
 import { findResourceById } from '../../utills/helpers';
 import { Member } from '../workspaces/models';
@@ -44,7 +44,7 @@ export const sendNotification = async (message: string, task: TaskSchema) => {
 			date: moment(new Date()).format('DD MM YYYY hh:mm:ss'),
 		});
 	} catch (err: any) {
-		return new BadRequest(
+		return new BadRequestError(
 			`Failed to add email job to the queue: ${err.message}`
 		);
 	}

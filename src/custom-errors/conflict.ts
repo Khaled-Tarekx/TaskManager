@@ -1,10 +1,10 @@
 import { StatusCodes } from 'http-status-codes';
 import CustomError from './custom-error';
 
-class BadRequestError extends CustomError {
+class Conflict extends CustomError {
 	constructor(message: string) {
-		super(message, StatusCodes.BAD_REQUEST);
+		super(message, StatusCodes.CONFLICT);
 	}
 }
 
-export default BadRequestError;
+export default Conflict;

@@ -1,8 +1,24 @@
-import { getModelForClass, modelOptions, prop } from '@typegoose/typegoose';
+import {
+	getModelForClass,
+	modelOptions,
+	prop,
+	pre,
+} from '@typegoose/typegoose';
 import { Position, Roles } from '../auth/types';
-import { Types } from 'mongoose';
+import { Member } from '../workspaces/models';
+import { BadRequestError } from '../../custom-errors/main';
 
 @modelOptions({ schemaOptions: { timestamps: true, id: true } })
+@pre<UserSchema>('findOneAndDelete', async function (next) {
+	try {
+		await Member.deleteMany({ user: this._id });
+		next();
+	} catch (err: unknown) {
+		if (err instanceof BadRequestError) {
+			next(new BadRequestError(err.message));
+		}
+	}
+})
 export class UserSchema {
 	@prop({ type: () => String, required: true })
 	public username!: string;

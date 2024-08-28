@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { validateResource } from '../auth/utillities';
+import { validateResource } from '../../auth/utillities';
 import {
 	getReply,
 	getReplies,

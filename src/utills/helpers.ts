@@ -2,11 +2,12 @@ import z from 'zod';
 import { client } from '../../main';
 import { Types, Model, type HydratedDocument } from 'mongoose';
 import {
-	NotFound,
-	UnAuthenticated,
-	BadRequest,
-	Forbidden,
-} from '../custom-errors/main';
+	LinkExpired,
+	NotResourceOwner,
+	NotValidId,
+	WorkspaceMismatch,
+} from './errors';
+import { UserNotFound } from '../modules/auth/errors/cause';
 
 const DEFAULT_EXPIRATION = process.env.DEFAULT_EXPIRATION_CASHE;
 
@@ -44,12 +45,13 @@ export const mongooseId = z.custom<string>(
 
 export const findResourceById = async <T>(
 	model: Model<T>,
-	id: string | Types.ObjectId
+	id: string | Types.ObjectId,
+	resourceNotFound: Error
 ): Promise<HydratedDocument<T>> => {
 	const resource = await model.findById(id);
 
 	if (!resource) {
-		throw new NotFound(`the resource you are trying to access is not found`);
+		throw resourceNotFound;
 	}
 	return resource;
 };
@@ -58,24 +60,24 @@ export function checkUser(
 	user: Express.User | undefined
 ): asserts user is Express.User {
 	if (!user) {
-		throw new UnAuthenticated('log in first to grant access');
+		throw new UserNotFound('log in first to grant access');
 	}
 }
 
-export const checkResource = async <T>(
-	resource: T | undefined | null
-): Promise<T> => {
+export function checkResource<T>(
+	resource: T | undefined | null,
+	serviceError: Error
+): asserts resource is T {
 	if (!resource) {
-		throw new NotFound('Resource not found');
+		throw serviceError;
 	}
-	return resource;
-};
+}
 
 export const validateObjectIds = (ids: string[]) => {
 	const isValidIds = ids.every((id) => Types.ObjectId.isValid(id));
 
 	if (!isValidIds) {
-		throw new BadRequest('Invalid Object Id');
+		throw new NotValidId('Invalid Object Id');
 	}
 };
 
@@ -85,7 +87,7 @@ export const isResourceOwner = async (
 ): Promise<Boolean> => {
 	const userIsResourceOwner = loggedInUserId === requesterId.toString();
 	if (!userIsResourceOwner) {
-		throw new UnAuthenticated(`you are not the owner of the resource`);
+		throw new NotResourceOwner(`you are not the owner of the resource`);
 	}
 	return true;
 };
@@ -96,7 +98,7 @@ export const compareMembersWorkspace = async (
 ): Promise<Boolean> => {
 	const isSameWorkspace = member || memberToCompare;
 	if (!isSameWorkspace) {
-		throw new Forbidden(
+		throw new WorkspaceMismatch(
 			'Creator or assignee does not belong to this workspace'
 		);
 	}
@@ -106,7 +108,7 @@ export const compareMembersWorkspace = async (
 
 export const isExpired = (expiresAt: Date, createdAt: Date): Boolean => {
 	if (expiresAt.getTime() <= createdAt.getTime()) {
-		throw new NotFound('invite link already expired');
+		throw new LinkExpired('invite link already expired');
 	}
 	return true;
 };

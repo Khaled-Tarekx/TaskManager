@@ -1,7 +1,6 @@
 import { Forbidden } from '../../custom-errors/main';
 import User from './models';
-import Reply from '../replies/models';
-import Comment from '../comments/models';
+import { Comment, Reply } from '../comments/models';
 import Task from '../tasks/models';
 import {
 	findResourceById,
@@ -19,8 +18,10 @@ export const getUser = async (userId: string) => {
 	try {
 		validateObjectIds([userId]);
 		return findResourceById(User, userId);
-	} catch (err: any) {
-		throw new Forbidden(err.message);
+	} catch (err: unknown) {
+		if (err instanceof Forbidden) {
+			throw new Forbidden(err.message);
+		}
 	}
 };
 
@@ -35,8 +36,10 @@ export const updateUserInfo = async (
 			{ new: true }
 		);
 		return checkResource(updatedUser);
-	} catch (err: any) {
-		throw new Forbidden(err.message);
+	} catch (err: unknown) {
+		if (err instanceof Forbidden) {
+			throw new Forbidden(err.message);
+		}
 	}
 };
 
@@ -46,8 +49,10 @@ export const deleteUser = async (user: Express.User) => {
 
 		await User.findByIdAndDelete(userToDelete.id);
 		return userToDelete;
-	} catch (err: any) {
-		throw new Forbidden(err.message);
+	} catch (err: unknown) {
+		if (err instanceof Forbidden) {
+			throw new Forbidden(err.message);
+		}
 	}
 };
 
@@ -65,19 +70,17 @@ export const getUserReply = async (replyId: string, user: Express.User) => {
 			owner: user.id,
 		});
 		return checkResource(reply);
-	} catch (err: any) {
-		throw new Forbidden(err.message);
+	} catch (err: unknown) {
+		if (err instanceof Forbidden) {
+			throw new Forbidden(err.message);
+		}
 	}
 };
 
 export const getUserComments = async (user: Express.User) => {
-	try {
-		return Comment.find({
-			owner: user.id,
-		});
-	} catch (err: any) {
-		throw new Forbidden(err.message);
-	}
+	return Comment.find({
+		owner: user.id,
+	});
 };
 
 export const getUserComment = async (
@@ -91,8 +94,10 @@ export const getUserComment = async (
 			owner: user.id,
 		});
 		return checkResource(comment);
-	} catch (err: any) {
-		throw new Forbidden(err.message);
+	} catch (err: unknown) {
+		if (err instanceof Forbidden) {
+			throw new Forbidden(err.message);
+		}
 	}
 };
 
@@ -102,11 +107,16 @@ export const getUserTasks = async (user: Express.User) => {
 
 export const getUserTask = async (user: Express.User, taskId: string) => {
 	validateObjectIds([taskId]);
+	try {
+		const task = await Task.findOne({
+			owner: user.id,
+			_id: taskId,
+		});
 
-	const task = await Task.findOne({
-		owner: user.id,
-		_id: taskId,
-	});
-
-	return checkResource(task);
+		return checkResource(task);
+	} catch (err: unknown) {
+		if (err instanceof Forbidden) {
+			throw new Forbidden(err.message);
+		}
+	}
 };

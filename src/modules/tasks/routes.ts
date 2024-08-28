@@ -22,8 +22,8 @@ router
 		createTask
 	);
 
-router.route('/:taskId/owner/:assigneeId').post(assignTask);
-router.route('/:taskId/completed').post(markCompleted);
+router.patch('/:taskId/assign/:assigneeId', assignTask);
+router.patch('/:taskId/completed', markCompleted);
 
 router
 	.route('/:taskId')

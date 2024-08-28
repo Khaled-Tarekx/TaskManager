@@ -1,5 +1,9 @@
 import Task from './models';
-import { BadRequest, Forbidden } from '../../custom-errors/main';
+import {
+	Forbidden,
+	BadRequestError,
+	CustomError,
+} from '../../custom-errors/main';
 import { notifyUserOfUpcomingDeadline } from './utills';
 import {
 	checkResource,
@@ -16,8 +20,7 @@ import {
 	type updateTaskDTO,
 } from './types';
 import { Member } from '../workspaces/models';
-import mongoose, { Types } from 'mongoose';
-import { ObjectId } from 'mongodb';
+
 export const getTasks = async () => {
 	return Task.find({});
 };
@@ -75,10 +78,12 @@ export const createTask = async (
 		await validatedTask.save();
 		try {
 			await notifyUserOfUpcomingDeadline(validatedTask);
-		} catch (err: any) {
-			throw new BadRequest(
-				`Error notifying user of upcoming deadline: ${err.message}`
-			);
+		} catch (err: unknown) {
+			if (err instanceof BadRequestError) {
+				throw new BadRequestError(
+					`Error notifying user of upcoming deadline: ${err.message}`
+				);
+			}
 		}
 	}
 	return validatedTask;
@@ -113,21 +118,29 @@ export const updateTask = async (
 	try {
 		await notifyUserOfUpcomingDeadline(validatedTask);
 		return validatedTask;
-	} catch (err: any) {
-		throw new Forbidden(err.message);
+	} catch (err: unknown) {
+		if (err instanceof Forbidden) {
+			throw new Forbidden(err.message);
+		}
 	}
 };
 
 export const deleteTask = async (user: Express.User, taskId: string) => {
 	validateObjectIds([taskId]);
-	const task = await findResourceById(Task, taskId);
-	const creator = await findResourceById(Member, task.creator._id);
+	try {
+		const task = await findResourceById(Task, taskId);
+		const creator = await findResourceById(Member, task.creator._id);
 
-	await isResourceOwner(user.id, creator.user._id);
+		await isResourceOwner(user.id, creator.user._id);
 
-	await Task.findByIdAndDelete(task.id);
+		await Task.findByIdAndDelete(task.id);
 
-	return task;
+		return task;
+	} catch (err: unknown) {
+		if (err instanceof Forbidden) {
+			throw new Forbidden(err.message);
+		}
+	}
 };
 export const assignTask = async (
 	params: assignTaskParams,
@@ -163,55 +176,67 @@ export const assignTask = async (
 	try {
 		await notifyUserOfUpcomingDeadline(validatedTask);
 		return validatedTask;
-	} catch (err: any) {
-		throw new Forbidden(err.message);
+	} catch (err: unknown) {
+		if (err instanceof Forbidden) {
+			throw new Forbidden(err.message);
+		}
 	}
 };
 
 export const markCompleted = async (taskId: string, user: Express.User) => {
 	validateObjectIds([taskId]);
-	const task = await findResourceById(Task, taskId);
-	const creator = await findResourceById(Member, task.creator._id);
+	try {
+		const task = await findResourceById(Task, taskId);
+		const creator = await findResourceById(Member, task.creator._id);
 
-	await isResourceOwner(user.id, creator.user._id);
+		await isResourceOwner(user.id, creator.user._id);
 
-	if (!task.assignee) {
-		throw new BadRequest(
-			`task must be assigned to a user first before` +
-				` marking it as completed, task is ${task.status}`
-		);
-	}
-
-	if (task.dependants && task.dependants.length > 0) {
-		const incompleteDependants = await Task.find({
-			_id: { $in: task.dependants },
-			status: { $ne: 'completed' },
-		});
-		const incompleteDependantsIds = incompleteDependants
-			.map((dep) => dep._id)
-			.join(', ');
-		if (incompleteDependants.length > 0) {
-			throw new BadRequest(
-				`dependant tasks must be completed first ${incompleteDependantsIds}`
+		if (!task.assignee) {
+			throw new BadRequestError(
+				`task must be assigned to a user first before` +
+					` marking it as completed, task is ${task.status}`
 			);
 		}
+
+		if (task.dependants && task.dependants.length > 0) {
+			const incompleteDependants = await Task.find({
+				_id: { $in: task.dependants },
+				status: { $ne: 'completed' },
+			});
+			const incompleteDependantsIds = incompleteDependants
+				.map((dep) => dep._id)
+				.join(', ');
+			if (incompleteDependants.length > 0) {
+				throw new BadRequestError(
+					`dependant tasks must be completed first ${incompleteDependantsIds}`
+				);
+			}
+		}
+
+		if (task.status === Status.Completed) {
+			throw new BadRequestError('task already marked as completed before');
+		}
+
+		const taskToMark = await Task.findByIdAndUpdate(
+			task.id,
+			{ status: 'completed' },
+			{ new: true }
+		);
+
+		const validatedTask = await checkResource(taskToMark);
+
+		await Task.updateMany(
+			{ dependants: task.id },
+			{ $pull: { dependants: task.id } }
+		);
+
+		return validatedTask;
+	} catch (err: unknown) {
+		if (err instanceof CustomError) {
+			throw new CustomError(err.message);
+		}
+		if (err instanceof BadRequestError) {
+			throw new BadRequestError(err.message);
+		}
 	}
-	const taskToMark = await Task.findByIdAndUpdate(
-		task.id,
-		{ status: 'completed' },
-		{ new: true }
-	);
-
-	const validatedTask = await checkResource(taskToMark);
-
-	await Task.updateMany(
-		{ dependants: task.id },
-		{ $pull: { dependants: task.id } }
-	);
-
-	if (validatedTask.status === 'completed') {
-		throw new BadRequest(`task already marked as completed before`);
-	}
-
-	return validatedTask;
 };

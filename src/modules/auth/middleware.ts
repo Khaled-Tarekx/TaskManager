@@ -4,7 +4,7 @@ import User, { UserSchema } from '../users/models';
 import type { NextFunction, Request, Response } from 'express';
 import {
 	NotFound,
-	UnAuthenticated,
+	AuthenticationError,
 	CustomError,
 } from '../../custom-errors/main';
 import { StatusCodes } from 'http-status-codes';
@@ -49,7 +49,7 @@ export default passport.use(
 		try {
 			if (!jwt_payload.id) {
 				return done(
-					new UnAuthenticated('Invalid token: subject missing'),
+					new AuthenticationError('Invalid token: subject missing'),
 					false
 				);
 			}
@@ -70,8 +70,6 @@ export default passport.use(
 
 export const asyncHandler = (fn: Function) => {
 	return (req: Request, res: Response, next: NextFunction) => {
-		fn(req, res, next).catch((err: CustomError) => {
-			next(new Error(err.message));
-		});
+		fn(req, res, next).catch(next);
 	};
 };

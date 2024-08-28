@@ -8,40 +8,40 @@ import {
 } from '../../utills/helpers';
 import type { ReplyLikeDTO } from './types';
 
-import Reply from '../replies/models';
-import { Forbidden } from '../../custom-errors/main';
+import { Reply } from '../comments/models';
+import {
+	LikeCountUpdateFailed,
+	LikeCreationFailed,
+	LikeNotFound,
+	UnLikeFailed,
+} from './errors';
 
 export const getReplyLikes = async (replyId: string) => {
-	try {
-		validateObjectIds([replyId]);
-		return ReplyLike.find({ reply: replyId });
-	} catch (err: any) {
-		throw new Forbidden(err.message);
-	}
+	validateObjectIds([replyId]);
+	return ReplyLike.find({ reply: replyId });
 };
 
 export const getReplyLike = async (likeId: string) => {
-	try {
-		validateObjectIds([likeId]);
-		return findResourceById(ReplyLike, likeId);
-	} catch (err: any) {
-		throw new Forbidden(err.message);
-	}
+	validateObjectIds([likeId]);
+	return findResourceById(
+		ReplyLike,
+		likeId,
+		new LikeNotFound('you havent liked this reply')
+	);
 };
 
 export const getUserReplyLike = async (
 	user: Express.User,
 	replyId: string
 ) => {
-	try {
-		const userReplyLike = await ReplyLike.findOne({
-			owner: user.id,
-			reply: replyId,
-		});
-		return checkResource(userReplyLike);
-	} catch (err: any) {
-		throw new Forbidden(err.message);
-	}
+	const userReplyLike = await ReplyLike.findOne({
+		owner: user.id,
+		reply: replyId,
+	});
+	return checkResource(
+		userReplyLike,
+		new LikeNotFound('you havent liked this reply')
+	);
 };
 
 export const createReplyLike = async (
@@ -49,36 +49,44 @@ export const createReplyLike = async (
 	user: Express.User
 ) => {
 	const { replyId } = replyData;
-	try {
-		validateObjectIds([replyId]);
+	validateObjectIds([replyId]);
 
-		const replyLike = await ReplyLike.create({
-			owner: user.id,
-			reply: replyId,
-		});
-		const reply = await Reply.findByIdAndUpdate(replyLike.reply._id, {
-			$inc: { likeCount: 1 },
-		});
-		await checkResource(reply);
-		return checkResource(replyLike);
-	} catch (err: any) {
-		throw new Forbidden(err.message);
-	}
+	const replyLike = await ReplyLike.create({
+		owner: user.id,
+		reply: replyId,
+	});
+	const reply = await Reply.findByIdAndUpdate(replyLike.reply._id, {
+		$inc: { likeCount: 1 },
+	});
+	checkResource(
+		reply,
+		new LikeCountUpdateFailed('like count was not updated for this reply')
+	);
+	checkResource(replyLike, new LikeCreationFailed('like creation failed'));
+	return replyLike;
 };
 
 export const deleteReplyLike = async (likeId: string, user: Express.User) => {
-	try {
-		validateObjectIds([likeId]);
-		const replyLikeToDelete = await findResourceById(ReplyLike, likeId);
-		await isResourceOwner(user.id, replyLikeToDelete.owner._id);
-		const reply = await Reply.findByIdAndUpdate(replyLikeToDelete.reply._id, {
-			$inc: { likeCount: -1 },
-		});
+	validateObjectIds([likeId]);
+	const replyLikeToDelete = await findResourceById(
+		ReplyLike,
+		likeId,
+		new LikeNotFound('no like was found for this reply')
+	);
+	await isResourceOwner(user.id, replyLikeToDelete.owner._id);
+	const reply = await Reply.findByIdAndUpdate(replyLikeToDelete.reply._id, {
+		$inc: { likeCount: -1 },
+	});
 
-		await checkResource(reply);
-		await ReplyLike.findByIdAndDelete(replyLikeToDelete.id);
-		return replyLikeToDelete;
-	} catch (err: any) {
-		throw new Forbidden(err.message);
+	checkResource(
+		reply,
+		new LikeCountUpdateFailed('like cound was not updated for this reply')
+	);
+	const likeToDelete = await ReplyLike.findByIdAndDelete(
+		replyLikeToDelete.id
+	);
+	if (!likeToDelete) {
+		throw new UnLikeFailed('unlike operation failed');
 	}
+	return replyLikeToDelete;
 };

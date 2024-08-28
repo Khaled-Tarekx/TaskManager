@@ -7,37 +7,38 @@ import {
 	isResourceOwner,
 } from '../../utills/helpers';
 import type { CommentLikeDTO } from './types';
-import Comment from '../comments/models';
-import { Forbidden } from '../../custom-errors/main';
+import { Comment } from '../comments/models';
+import {
+	LikeCountUpdateFailed,
+	LikeCreationFailed,
+	LikeNotFound,
+	UnLikeFailed,
+} from './errors';
 
 export const getCommentLikes = async (commentId: string) => {
-	try {
-		validateObjectIds([commentId]);
-		return CommentLike.find({ comment: commentId });
-	} catch (err: any) {
-		throw new Forbidden(err.message);
-	}
+	validateObjectIds([commentId]);
+	return CommentLike.find({ comment: commentId });
 };
 
 export const getCommentLike = async (likeId: string) => {
-	try {
-		validateObjectIds([likeId]);
+	validateObjectIds([likeId]);
 
-		return findResourceById(CommentLike, likeId);
-	} catch (err: any) {
-		throw new Forbidden(err.message);
-	}
+	return findResourceById(
+		CommentLike,
+		likeId,
+		new LikeNotFound('you havent liked this reply')
+	);
 };
 
 export const getUserCommentLike = async (user: Express.User) => {
-	try {
-		const userCommentLike = await CommentLike.findOne({
-			owner: user.id,
-		});
-		return checkResource(userCommentLike);
-	} catch (err: any) {
-		throw new Forbidden(err.message);
-	}
+	const userCommentLike = await CommentLike.findOne({
+		owner: user.id,
+	});
+	checkResource(
+		userCommentLike,
+		new LikeNotFound('you havent liked this reply')
+	);
+	return userCommentLike;
 };
 
 export const createCommentLike = async (
@@ -45,41 +46,50 @@ export const createCommentLike = async (
 	user: Express.User
 ) => {
 	const { commentId } = commentData;
-	try {
-		validateObjectIds([commentId]);
+	validateObjectIds([commentId]);
 
-		const commentLike = await CommentLike.create({
-			owner: user.id,
-			comment: commentId,
-		});
-		const comment = await Comment.findByIdAndUpdate(commentLike.comment._id, {
-			$inc: { likeCount: 1 },
-		});
-		await checkResource(comment);
-		return checkResource(commentLike);
-	} catch (err: any) {
-		throw new Forbidden(err.message);
-	}
+	const commentLike = await CommentLike.create({
+		owner: user.id,
+		comment: commentId,
+	});
+	const comment = await Comment.findByIdAndUpdate(commentLike.comment._id, {
+		$inc: { likeCount: 1 },
+	});
+	checkResource(
+		comment,
+		new LikeCountUpdateFailed('like count was not updated for this comment')
+	);
+	checkResource(commentLike, new LikeCreationFailed('like creation failed'));
+
+	return commentLike;
 };
 
 export const deleteCommentLike = async (
 	likeId: string,
 	user: Express.User
 ) => {
-	try {
-		validateObjectIds([likeId]);
-		const commentLikeToDelete = await findResourceById(CommentLike, likeId);
-		await isResourceOwner(user.id, commentLikeToDelete.owner._id);
-		const comment = await Comment.findByIdAndUpdate(
-			commentLikeToDelete.comment._id,
-			{
-				$inc: { likeCount: -1 },
-			}
-		);
-		await checkResource(comment);
-		await CommentLike.findByIdAndDelete(commentLikeToDelete._id);
-		return commentLikeToDelete;
-	} catch (err: any) {
-		throw new Forbidden(err.message);
+	validateObjectIds([likeId]);
+	const commentLikeToDelete = await findResourceById(
+		CommentLike,
+		likeId,
+		new LikeNotFound('no like was found for this reply')
+	);
+	await isResourceOwner(user.id, commentLikeToDelete.owner._id);
+	const comment = await Comment.findByIdAndUpdate(
+		commentLikeToDelete.comment._id,
+		{
+			$inc: { likeCount: -1 },
+		}
+	);
+	checkResource(
+		comment,
+		new LikeCountUpdateFailed('like cound was not updated for this reply')
+	);
+	const likeToDelete = await CommentLike.findByIdAndDelete(
+		commentLikeToDelete._id
+	);
+	if (!likeToDelete) {
+		throw new UnLikeFailed('unlike operation failed');
 	}
+	return commentLikeToDelete;
 };
