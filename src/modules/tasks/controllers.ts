@@ -1,36 +1,72 @@
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import Task from './models';
 import { StatusCodes } from 'http-status-codes';
 import { checkUser, validateObjectIds } from '../../utills/helpers';
-import { asyncHandler } from '../auth/middleware';
 import { type TypedRequestBody } from 'zod-express-middleware';
 import { createTaskSchema, updateTaskSchema } from './validation';
 
 import * as TaskServices from './services';
-import Forbidden from 'src/custom-errors/forbidden';
+import {
+	TaskNotFound,
+	TaskCreationFailed,
+	TaskDeletionFailed,
+	TaskMarkedCompleted,
+	TaskUpdatingFailed,
+	MailFailedToSend,
+	AssigneeNotFound,
+	CompleteTaskDependenciesFirst,
+} from './errors/cause';
+import {
+	AuthenticationError,
+	Conflict,
+	Forbidden,
+	NotFound,
+} from '../../custom-errors/main';
+import * as ErrorMsg from './errors/msg';
+import * as GlobalErrorMsg from '../../utills/errors/msg';
+import { UserNotFound } from '../auth/errors/cause';
 
-export const getTasks = asyncHandler(async (_req: Request, res: Response) => {
+import { MemberNotFound } from '../workspaces/members/errors/cause';
+import {
+	NotResourceOwner,
+	NotValidId,
+	WorkspaceMismatch,
+} from 'src/utills/errors/cause';
+
+export const getTasks = async (_req: Request, res: Response) => {
 	const tasks = await TaskServices.getTasks();
 	res.status(StatusCodes.OK).json({ data: tasks, count: tasks.length });
-});
+};
 
-export const getTasksPage = asyncHandler(
-	async (_req: Request, res: Response) => {
-		const tasks = await Task.find({});
-		res.render('front_end/index', { tasks: tasks });
-	}
-);
+export const getTasksPage = async (_req: Request, res: Response) => {
+	const tasks = await Task.find({});
+	res.render('front_end/index', { tasks: tasks });
+};
 
-export const getTask = asyncHandler(async (req: Request, res: Response) => {
+export const getTask = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
 	const { taskId } = req.params;
-	const task = await TaskServices.getTask(taskId);
+	try {
+		const task = await TaskServices.getTask(taskId);
 
-	res.status(StatusCodes.OK).json({ data: task });
-});
+		res.status(StatusCodes.OK).json({ data: task });
+	} catch (err: unknown) {
+		if (err instanceof TaskNotFound) {
+			next(new NotFound(ErrorMsg.TaskNotFound));
+		}
+	}
+};
 
-export const createTask = asyncHandler(
-	async (req: TypedRequestBody<typeof createTaskSchema>, res: Response) => {
-		const user = req.user;
+export const createTask = async (
+	req: TypedRequestBody<typeof createTaskSchema>,
+	res: Response,
+	next: NextFunction
+) => {
+	const user = req.user;
+	try {
 		checkUser(user);
 		const attachment = req.file;
 		const {
@@ -57,13 +93,30 @@ export const createTask = asyncHandler(
 		);
 
 		res.status(StatusCodes.CREATED).json({ data: task });
+	} catch (err: unknown) {
+		switch (true) {
+			case err instanceof UserNotFound:
+				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+			case err instanceof MemberNotFound:
+				next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
+			case err instanceof TaskCreationFailed:
+				next(new Conflict(ErrorMsg.TaskCreationFailed));
+			case err instanceof MailFailedToSend:
+				next(new Conflict(ErrorMsg.MailFailedToSend));
+			default:
+				next(err);
+		}
 	}
-);
+};
 
-export const updateTask = asyncHandler(
-	async (req: TypedRequestBody<typeof updateTaskSchema>, res: Response) => {
-		const { priority, skill_set, dead_line } = req.body;
-		const { taskId } = req.params;
+export const updateTask = async (
+	req: TypedRequestBody<typeof updateTaskSchema>,
+	res: Response,
+	next: NextFunction
+) => {
+	const { priority, skill_set, dead_line } = req.body;
+	const { taskId } = req.params;
+	try {
 		const user = req.user;
 		checkUser(user);
 		const attachment = req.file;
@@ -79,24 +132,66 @@ export const updateTask = asyncHandler(
 			attachment
 		);
 		res.status(StatusCodes.OK).json({ data: updatedTask });
-	}
-);
+	} catch (err: unknown) {
+		switch (true) {
+			case err instanceof UserNotFound:
+				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+			case err instanceof TaskNotFound:
+				next(new NotFound(ErrorMsg.TaskNotFound));
+			case err instanceof MemberNotFound:
+				next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
+			case err instanceof NotResourceOwner:
+				next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
 
-export const deleteTask = asyncHandler(
-	async (req: Request, res: Response) => {
-		const user = req.user;
+			case err instanceof TaskUpdatingFailed:
+				next(new Conflict(ErrorMsg.TaskUpdatingFailed));
+			case err instanceof MailFailedToSend:
+				next(new Conflict(ErrorMsg.MailFailedToSend));
+			default:
+				next(err);
+		}
+	}
+};
+
+export const deleteTask = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const user = req.user;
+	try {
 		checkUser(user);
 		const { taskId } = req.params;
 
 		const deletedTask = await TaskServices.deleteTask(user, taskId);
 		res.status(StatusCodes.OK).json({ data: deletedTask });
-	}
-);
+	} catch (err: unknown) {
+		switch (true) {
+			case err instanceof UserNotFound:
+				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+			case err instanceof TaskNotFound:
+				next(new NotFound(ErrorMsg.TaskNotFound));
+			case err instanceof MemberNotFound:
+				next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
+			case err instanceof NotResourceOwner:
+				next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
 
-export const assignTask = asyncHandler(
-	async (req: Request, res: Response) => {
-		const { taskId, assigneeId } = req.params;
-		const user = req.user;
+			case err instanceof TaskDeletionFailed:
+				next(new Conflict(ErrorMsg.TaskDeletionFailed));
+			default:
+				next(err);
+		}
+	}
+};
+
+export const assignTask = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const { taskId, assigneeId } = req.params;
+	const user = req.user;
+	try {
 		checkUser(user);
 		validateObjectIds([taskId, assigneeId]);
 		const assignedTask = await TaskServices.assignTask(
@@ -107,15 +202,63 @@ export const assignTask = asyncHandler(
 		res.status(StatusCodes.OK).json({
 			data: assignedTask,
 		});
+	} catch (err: unknown) {
+		switch (true) {
+			case err instanceof UserNotFound:
+				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+			case err instanceof NotValidId:
+				next(new AuthenticationError(GlobalErrorMsg.NotValidId));
+			case err instanceof TaskNotFound:
+				next(new NotFound(ErrorMsg.TaskNotFound));
+			case err instanceof MemberNotFound:
+				next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
+			case err instanceof NotResourceOwner:
+				next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
+			case err instanceof WorkspaceMismatch:
+				next(new Conflict(GlobalErrorMsg.WorkspaceMismatch));
+			case err instanceof TaskUpdatingFailed:
+				next(new Conflict(ErrorMsg.TaskUpdatingFailed));
+			case err instanceof MailFailedToSend:
+				next(new Conflict(ErrorMsg.MailFailedToSend));
+			default:
+				next(err);
+		}
 	}
-);
+};
 
-export const markCompleted = async (req: Request, res: Response) => {
+export const markCompleted = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
 	const { taskId } = req.params;
 	try {
 		const user = req.user;
 		checkUser(user);
 		const markedTask = await TaskServices.markCompleted(taskId, user);
 		res.status(StatusCodes.OK).json({ data: markedTask });
-	} catch (err: unknown) {}
+	} catch (err: unknown) {
+		switch (true) {
+			case err instanceof UserNotFound:
+				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+			case err instanceof NotValidId:
+				next(new AuthenticationError(GlobalErrorMsg.NotValidId));
+			case err instanceof TaskNotFound:
+				next(new NotFound(ErrorMsg.TaskNotFound));
+			case err instanceof MemberNotFound:
+				next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
+			case err instanceof NotResourceOwner:
+				next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
+			case err instanceof AssigneeNotFound:
+				next(new NotFound(ErrorMsg.AssigneeNotFound));
+			case err instanceof CompleteTaskDependenciesFirst:
+				next(new Conflict(ErrorMsg.CompleteTaskDependenciesFirst));
+			case err instanceof TaskMarkedCompleted:
+				next(new Conflict(ErrorMsg.TaskAlreadyMarked));
+			case err instanceof TaskUpdatingFailed:
+				next(new Conflict(ErrorMsg.TaskUpdatingFailed));
+			default:
+				next(err);
+		}
+	}
 };

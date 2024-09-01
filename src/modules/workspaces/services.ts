@@ -8,7 +8,13 @@ import {
 } from '../../utills/helpers';
 import { Role } from './members/types';
 import type { updateWorkSpaceDTO, workSpaceDTO } from './types';
-import { Forbidden } from 'src/custom-errors/main';
+import { MemberNotFound } from './members/errors/cause';
+import {
+	WorkspaceCreationFailed,
+	WorkspaceDeletionFailed,
+	WorkspaceNotFound,
+	WorkspaceUpdatingFailed,
+} from './errors/cause';
 
 export const getWorkSpaces = async () => {
 	return WorkSpace.find({});
@@ -27,41 +33,29 @@ export const createWorkSpace = async (
 	user: Express.User
 ) => {
 	const { name, type, description } = workSpaceData;
-	try {
-		const workSpaceOwner = new Member({
-			role: Role.owner,
-			user: user.id,
-			description,
-		});
+	const workSpaceOwner = new Member({
+		role: Role.owner,
+		user: user.id,
+		description,
+	});
 
-		const work_space = await WorkSpace.create({
-			name,
-			type,
-			owner: workSpaceOwner.id,
-			description,
-		});
+	const workspace = await WorkSpace.create({
+		name,
+		type,
+		owner: workSpaceOwner.id,
+		description,
+	});
 
-		workSpaceOwner.workspace = work_space.id;
-		await workSpaceOwner.save();
-		await checkResource(workSpaceOwner);
-		await checkResource(work_space);
-		return { work_space, workSpaceOwner };
-	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
-		}
-	}
+	workSpaceOwner.workspace = workspace.id;
+	await workSpaceOwner.save();
+	checkResource(workSpaceOwner, MemberNotFound);
+	checkResource(workspace, WorkspaceCreationFailed);
+	return { workspace, workSpaceOwner };
 };
 
 export const getWorkSpace = async (workspaceId: string) => {
-	try {
-		validateObjectIds([workspaceId]);
-		return findResourceById(WorkSpace, workspaceId);
-	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
-		}
-	}
+	validateObjectIds([workspaceId]);
+	return findResourceById(WorkSpace, workspaceId, WorkspaceNotFound);
 };
 
 export const updateWorkSpace = async (
@@ -70,42 +64,51 @@ export const updateWorkSpace = async (
 	user: Express.User
 ) => {
 	const { name, description, type } = workSpaceData;
-	try {
-		validateObjectIds([workspaceId]);
-		const workspace = await findResourceById(WorkSpace, workspaceId);
-		const userToCompare = await findResourceById(Member, workspace.owner._id);
+	validateObjectIds([workspaceId]);
+	const workspace = await findResourceById(
+		WorkSpace,
+		workspaceId,
+		WorkspaceNotFound
+	);
+	const workspaceOwner = await findResourceById(
+		Member,
+		workspace.owner._id,
+		MemberNotFound
+	);
 
-		await isResourceOwner(user.id, userToCompare.user._id);
+	await isResourceOwner(user.id, workspaceOwner.user._id);
 
-		const updatedWorkSpace = await WorkSpace.findByIdAndUpdate(
-			workspace.id,
-			{ name, description, type },
-			{ new: true }
-		);
+	const updatedWorkSpace = await WorkSpace.findByIdAndUpdate(
+		workspace.id,
+		{ name, description, type },
+		{ new: true }
+	);
 
-		return checkResource(updatedWorkSpace);
-	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
-		}
-	}
+	checkResource(updatedWorkSpace, WorkspaceUpdatingFailed);
+	return updatedWorkSpace;
 };
 
 export const deleteWorkSpace = async (
 	workspaceId: string,
 	user: Express.User
 ) => {
-	try {
-		validateObjectIds([workspaceId]);
-		const workspace = await findResourceById(WorkSpace, workspaceId);
+	validateObjectIds([workspaceId]);
+	const workspace = await findResourceById(
+		WorkSpace,
+		workspaceId,
+		WorkspaceNotFound
+	);
 
-		const userToCompare = await findResourceById(Member, workspace.owner._id);
-		await isResourceOwner(user.id, userToCompare.user._id);
-		await WorkSpace.findByIdAndDelete(workspace._id);
-		return workspace;
-	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
-		}
+	const workspaceOwner = await findResourceById(
+		Member,
+		workspace.owner._id,
+		MemberNotFound
+	);
+	await isResourceOwner(user.id, workspaceOwner.user._id);
+	await WorkSpace.findByIdAndDelete(workspace._id);
+	if (!workspace) {
+		throw new WorkspaceDeletionFailed();
 	}
+
+	return workspace;
 };

@@ -6,7 +6,7 @@ import {
 	NotResourceOwner,
 	NotValidId,
 	WorkspaceMismatch,
-} from './errors';
+} from './errors/cause';
 import { UserNotFound } from '../modules/auth/errors/cause';
 
 const DEFAULT_EXPIRATION = process.env.DEFAULT_EXPIRATION_CASHE;
@@ -60,7 +60,7 @@ export function checkUser(
 	user: Express.User | undefined
 ): asserts user is Express.User {
 	if (!user) {
-		throw new UserNotFound('log in first to grant access');
+		throw new UserNotFound();
 	}
 }
 
@@ -77,7 +77,7 @@ export const validateObjectIds = (ids: string[]) => {
 	const isValidIds = ids.every((id) => Types.ObjectId.isValid(id));
 
 	if (!isValidIds) {
-		throw new NotValidId('Invalid Object Id');
+		throw new NotValidId();
 	}
 };
 
@@ -87,7 +87,7 @@ export const isResourceOwner = async (
 ): Promise<Boolean> => {
 	const userIsResourceOwner = loggedInUserId === requesterId.toString();
 	if (!userIsResourceOwner) {
-		throw new NotResourceOwner(`you are not the owner of the resource`);
+		throw new NotResourceOwner();
 	}
 	return true;
 };
@@ -98,9 +98,7 @@ export const compareMembersWorkspace = async (
 ): Promise<Boolean> => {
 	const isSameWorkspace = member || memberToCompare;
 	if (!isSameWorkspace) {
-		throw new WorkspaceMismatch(
-			'Creator or assignee does not belong to this workspace'
-		);
+		throw new WorkspaceMismatch();
 	}
 
 	return true;
@@ -108,7 +106,7 @@ export const compareMembersWorkspace = async (
 
 export const isExpired = (expiresAt: Date, createdAt: Date): Boolean => {
 	if (expiresAt.getTime() <= createdAt.getTime()) {
-		throw new LinkExpired('invite link already expired');
+		throw new LinkExpired();
 	}
 	return true;
 };

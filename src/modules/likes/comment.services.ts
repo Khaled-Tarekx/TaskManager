@@ -13,7 +13,7 @@ import {
 	LikeCreationFailed,
 	LikeNotFound,
 	UnLikeFailed,
-} from './errors';
+} from './errors/cause';
 
 export const getCommentLikes = async (commentId: string) => {
 	validateObjectIds([commentId]);
@@ -23,21 +23,14 @@ export const getCommentLikes = async (commentId: string) => {
 export const getCommentLike = async (likeId: string) => {
 	validateObjectIds([likeId]);
 
-	return findResourceById(
-		CommentLike,
-		likeId,
-		new LikeNotFound('you havent liked this reply')
-	);
+	return findResourceById(CommentLike, likeId, LikeNotFound);
 };
 
 export const getUserCommentLike = async (user: Express.User) => {
 	const userCommentLike = await CommentLike.findOne({
 		owner: user.id,
 	});
-	checkResource(
-		userCommentLike,
-		new LikeNotFound('you havent liked this reply')
-	);
+	checkResource(userCommentLike, LikeNotFound);
 	return userCommentLike;
 };
 
@@ -55,11 +48,8 @@ export const createCommentLike = async (
 	const comment = await Comment.findByIdAndUpdate(commentLike.comment._id, {
 		$inc: { likeCount: 1 },
 	});
-	checkResource(
-		comment,
-		new LikeCountUpdateFailed('like count was not updated for this comment')
-	);
-	checkResource(commentLike, new LikeCreationFailed('like creation failed'));
+	checkResource(comment, LikeCountUpdateFailed);
+	checkResource(commentLike, LikeCreationFailed);
 
 	return commentLike;
 };
@@ -72,7 +62,7 @@ export const deleteCommentLike = async (
 	const commentLikeToDelete = await findResourceById(
 		CommentLike,
 		likeId,
-		new LikeNotFound('no like was found for this reply')
+		LikeNotFound
 	);
 	await isResourceOwner(user.id, commentLikeToDelete.owner._id);
 	const comment = await Comment.findByIdAndUpdate(
@@ -81,15 +71,12 @@ export const deleteCommentLike = async (
 			$inc: { likeCount: -1 },
 		}
 	);
-	checkResource(
-		comment,
-		new LikeCountUpdateFailed('like cound was not updated for this reply')
-	);
+	checkResource(comment, LikeCountUpdateFailed);
 	const likeToDelete = await CommentLike.findByIdAndDelete(
 		commentLikeToDelete._id
 	);
 	if (!likeToDelete) {
-		throw new UnLikeFailed('unlike operation failed');
+		throw new UnLikeFailed();
 	}
 	return commentLikeToDelete;
 };

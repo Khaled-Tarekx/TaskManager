@@ -1,11 +1,12 @@
 {
-    "filewatcher.commands": [
-        {
-            "match": "\\.ts*",
-            "isAsync": true,
-            "event": "onFileChange",
-            "vscodeTask": "workbench.action.tasks.dev"
-            
-        }
-    ]
+	"filewatcher.commands": [
+		{
+			"match": "\\.ts*",
+			"isAsync": true,
+			"event": "onFileChange",
+			"vscodeTask": "workbench.action.tasks.dev"
+		}
+	],
+	"pieces.cloudCapabilities": "Blended",
+	"pieces.telemetry": true
 }

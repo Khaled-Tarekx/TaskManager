@@ -4,6 +4,7 @@ import AuthenticationError from './unauthenticated';
 import BadRequestError from './bad-request';
 import Forbidden from './forbidden';
 import Conflict from './conflict';
+import ResourceGone from './Resource-gone';
 
 export {
 	AuthenticationError,
@@ -12,4 +13,5 @@ export {
 	CustomError,
 	Forbidden,
 	Conflict,
+	ResourceGone,
 };

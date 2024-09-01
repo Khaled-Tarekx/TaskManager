@@ -1,9 +1,5 @@
 import Task from './models';
-import {
-	Forbidden,
-	BadRequestError,
-	CustomError,
-} from '../../custom-errors/main';
+
 import { notifyUserOfUpcomingDeadline } from './utills';
 import {
 	checkResource,
@@ -20,6 +16,17 @@ import {
 	type updateTaskDTO,
 } from './types';
 import { Member } from '../workspaces/models';
+import {
+	TaskNotFound,
+	TaskCreationFailed,
+	TaskDeletionFailed,
+	TaskUpdatingFailed,
+	MailFailedToSend,
+	TaskMarkedCompleted,
+	CompleteTaskDependenciesFirst,
+	AssigneeNotFound,
+} from './errors/cause';
+import { MemberNotFound } from '../workspaces/members/errors/cause';
 
 export const getTasks = async () => {
 	return Task.find({});
@@ -28,7 +35,7 @@ export const getTasks = async () => {
 
 export const getTask = async (taskId: string) => {
 	validateObjectIds([taskId]);
-	return findResourceById(Task, taskId);
+	return findResourceById(Task, taskId, TaskNotFound);
 };
 
 export const createTask = async (
@@ -49,21 +56,21 @@ export const createTask = async (
 		_id: assigneeId,
 		workspace: workspaceId,
 	});
-	const validatedAssignee = await checkResource(assignee);
+	checkResource(assignee, MemberNotFound);
 	const creator = await Member.findOne({
 		user: user.id,
 		workspace: workspaceId,
 	});
-	const validateCreator = await checkResource(creator);
+	checkResource(creator, MemberNotFound);
 
 	await compareMembersWorkspace(
-		validatedAssignee.workspace._id,
-		validateCreator.workspace._id
+		assignee.workspace._id,
+		creator.workspace._id
 	);
 	const task = await Task.create({
-		creator: validateCreator._id,
-		assignee: validatedAssignee._id,
-		workspace: validateCreator.workspace._id,
+		creator: creator._id,
+		assignee: assignee._id,
+		workspace: creator.workspace._id,
 		dead_line,
 		dependants,
 		priority,
@@ -71,22 +78,21 @@ export const createTask = async (
 		status,
 		attachment: attachment?.path,
 	});
-	const validatedTask = await checkResource(task);
-	if (validatedAssignee) {
-		validatedTask.status = Status.InProgress;
-		validatedTask.assignee = validatedAssignee;
-		await validatedTask.save();
+	checkResource(task, TaskCreationFailed);
+
+	if (assignee) {
+		task.status = Status.InProgress;
+		task.assignee = assignee;
+		await task.save();
 		try {
-			await notifyUserOfUpcomingDeadline(validatedTask);
+			await notifyUserOfUpcomingDeadline(task);
 		} catch (err: unknown) {
-			if (err instanceof BadRequestError) {
-				throw new BadRequestError(
-					`Error notifying user of upcoming deadline: ${err.message}`
-				);
+			if (err instanceof MailFailedToSend) {
+				throw new MailFailedToSend();
 			}
 		}
 	}
-	return validatedTask;
+	return task;
 };
 
 export const updateTask = async (
@@ -97,8 +103,12 @@ export const updateTask = async (
 ) => {
 	const { priority, skill_set, dead_line } = taskData;
 	validateObjectIds([taskId]);
-	const task = await findResourceById(Task, taskId);
-	const creator = await findResourceById(Member, task.creator._id);
+	const task = await findResourceById(Task, taskId, TaskNotFound);
+	const creator = await findResourceById(
+		Member,
+		task.creator._id,
+		MemberNotFound
+	);
 
 	await isResourceOwner(user.id, creator.user._id);
 
@@ -114,33 +124,33 @@ export const updateTask = async (
 		{ new: true }
 	);
 
-	const validatedTask = await checkResource(updatedTask);
+	checkResource(updatedTask, TaskUpdatingFailed);
 	try {
-		await notifyUserOfUpcomingDeadline(validatedTask);
-		return validatedTask;
+		await notifyUserOfUpcomingDeadline(task);
 	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
+		if (err instanceof MailFailedToSend) {
+			throw new MailFailedToSend();
 		}
 	}
+	return task;
 };
 
 export const deleteTask = async (user: Express.User, taskId: string) => {
 	validateObjectIds([taskId]);
-	try {
-		const task = await findResourceById(Task, taskId);
-		const creator = await findResourceById(Member, task.creator._id);
+	const task = await findResourceById(Task, taskId, TaskNotFound);
+	const creator = await findResourceById(
+		Member,
+		task.creator._id,
+		MemberNotFound
+	);
 
-		await isResourceOwner(user.id, creator.user._id);
+	await isResourceOwner(user.id, creator.user._id);
 
-		await Task.findByIdAndDelete(task.id);
-
-		return task;
-	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
-		}
+	const deletedTask = await Task.findByIdAndDelete(task.id);
+	if (!deletedTask) {
+		throw new TaskDeletionFailed();
 	}
+	return task;
 };
 export const assignTask = async (
 	params: assignTaskParams,
@@ -149,20 +159,24 @@ export const assignTask = async (
 	const { taskId, assigneeId } = params;
 
 	validateObjectIds([taskId, assigneeId]);
-	const task = await findResourceById(Task, taskId);
-	const creator = await findResourceById(Member, task.creator._id);
+	const task = await findResourceById(Task, taskId, TaskNotFound);
+	const creator = await findResourceById(
+		Member,
+		task.creator._id,
+		MemberNotFound
+	);
 
 	await isResourceOwner(user.id, creator.user._id);
 	const assignee = await Member.findOne({ user: assigneeId });
-	const validatedAssignee = await checkResource(assignee);
+	checkResource(assignee, MemberNotFound);
 
 	await compareMembersWorkspace(
-		validatedAssignee.workspace._id,
+		assignee.workspace._id,
 		creator.workspace._id
 	);
 	const assignedTask = await Task.findByIdAndUpdate(
 		task.id,
-		{ worker: validatedAssignee._id, status: 'inProgress' },
+		{ worker: assignee._id, status: 'inProgress' },
 		{ new: true }
 	).populate({
 		path: 'assignee',
@@ -172,71 +186,59 @@ export const assignTask = async (
 		},
 	});
 
-	const validatedTask = await checkResource(assignedTask);
+	checkResource(assignedTask, TaskUpdatingFailed);
 	try {
-		await notifyUserOfUpcomingDeadline(validatedTask);
-		return validatedTask;
+		await notifyUserOfUpcomingDeadline(assignedTask);
 	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
+		if (err instanceof MailFailedToSend) {
+			throw new MailFailedToSend();
 		}
 	}
+	return assignedTask;
 };
 
 export const markCompleted = async (taskId: string, user: Express.User) => {
 	validateObjectIds([taskId]);
-	try {
-		const task = await findResourceById(Task, taskId);
-		const creator = await findResourceById(Member, task.creator._id);
+	const task = await findResourceById(Task, taskId, TaskNotFound);
+	const creator = await findResourceById(
+		Member,
+		task.creator._id,
+		MemberNotFound
+	);
 
-		await isResourceOwner(user.id, creator.user._id);
+	await isResourceOwner(user.id, creator.user._id);
 
-		if (!task.assignee) {
-			throw new BadRequestError(
-				`task must be assigned to a user first before` +
-					` marking it as completed, task is ${task.status}`
-			);
-		}
+	if (!task.assignee) {
+		throw new AssigneeNotFound();
+	}
 
-		if (task.dependants && task.dependants.length > 0) {
-			const incompleteDependants = await Task.find({
-				_id: { $in: task.dependants },
-				status: { $ne: 'completed' },
-			});
-			const incompleteDependantsIds = incompleteDependants
-				.map((dep) => dep._id)
-				.join(', ');
-			if (incompleteDependants.length > 0) {
-				throw new BadRequestError(
-					`dependant tasks must be completed first ${incompleteDependantsIds}`
-				);
-			}
-		}
-
-		if (task.status === Status.Completed) {
-			throw new BadRequestError('task already marked as completed before');
-		}
-
-		const taskToMark = await Task.findByIdAndUpdate(
-			task.id,
-			{ status: 'completed' },
-			{ new: true }
-		);
-
-		const validatedTask = await checkResource(taskToMark);
-
-		await Task.updateMany(
-			{ dependants: task.id },
-			{ $pull: { dependants: task.id } }
-		);
-
-		return validatedTask;
-	} catch (err: unknown) {
-		if (err instanceof CustomError) {
-			throw new CustomError(err.message);
-		}
-		if (err instanceof BadRequestError) {
-			throw new BadRequestError(err.message);
+	if (task.dependants && task.dependants.length > 0) {
+		const incompleteDependants = await Task.find({
+			_id: { $in: task.dependants },
+			status: { $ne: 'completed' },
+		});
+		incompleteDependants.map((dep) => dep._id).join(', ');
+		if (incompleteDependants.length > 0) {
+			throw new CompleteTaskDependenciesFirst();
 		}
 	}
+
+	if (task.status === Status.Completed) {
+		throw new TaskMarkedCompleted();
+	}
+
+	const taskToMark = await Task.findByIdAndUpdate(
+		task.id,
+		{ status: 'completed' },
+		{ new: true }
+	);
+
+	checkResource(taskToMark, TaskUpdatingFailed);
+
+	await Task.updateMany(
+		{ dependants: task.id },
+		{ $pull: { dependants: task.id } }
+	);
+
+	return taskToMark;
 };

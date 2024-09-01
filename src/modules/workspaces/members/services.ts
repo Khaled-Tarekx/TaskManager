@@ -1,4 +1,3 @@
-import { BadRequestError, Forbidden } from '../../../custom-errors/main';
 import { Member, WorkSpace } from '../models';
 import User from '../../users/models';
 import {
@@ -8,24 +7,27 @@ import {
 	isResourceOwner,
 } from '../../../utills/helpers';
 import { type deleteMemberParams } from './types';
+import {
+	InvalidRole,
+	MemberDeletionFailed,
+	MemberNotFound,
+	MemberUpdateNotPermitted,
+	MemberUpdatingFailed,
+} from './errors/cause';
+import { UserNotFound } from '../../auth/errors/cause';
+import { WorkspaceNotFound } from '../errors/cause';
 
 export const getMemberByUsername = async <T>(username: T) => {
-	try {
-		const user = await User.findOne({ username });
-		const validateUser = await checkResource(user);
+	const user = await User.findOne({ username });
+	checkResource(user, UserNotFound);
 
-		const member = await Member.findOne({ user: validateUser.id }).populate({
-			path: 'user',
-			select: '-password',
-		});
+	const member = await Member.findOne({ user: user.id }).populate({
+		path: 'user',
+		select: '-password',
+	});
 
-		const validatedResource = await checkResource(member);
-		return validatedResource;
-	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
-		}
-	}
+	checkResource(member, MemberNotFound);
+	return member;
 };
 
 export const updateMemberPermissions = async (
@@ -34,40 +36,39 @@ export const updateMemberPermissions = async (
 	role: string
 ) => {
 	const { memberId, workspaceId } = params;
-	try {
-		validateObjectIds([workspaceId, memberId]);
-		if (role === 'owner')
-			throw new BadRequestError(
-				'you have to enter a role between member and admin'
-			);
-		const workspace = await findResourceById(WorkSpace, workspaceId);
-		const workspaceOwner = await findResourceById(
-			Member,
-			workspace.owner._id
-		);
-		const workspaceMember = await findResourceById(Member, memberId);
-		const isWorkspaceOwner = await isResourceOwner(
-			user.id,
-			workspaceOwner.user._id
-		);
+	validateObjectIds([workspaceId, memberId]);
+	if (role === 'owner') throw new InvalidRole();
+	const workspace = await findResourceById(
+		WorkSpace,
+		workspaceId,
+		WorkspaceNotFound
+	);
+	const workspaceOwner = await findResourceById(
+		Member,
+		workspace.owner._id,
+		MemberNotFound
+	);
+	const workspaceMember = await findResourceById(
+		Member,
+		memberId,
+		MemberNotFound
+	);
+	const isWorkspaceOwner = await isResourceOwner(
+		user.id,
+		workspaceOwner.user._id
+	);
 
-		if (!isWorkspaceOwner || workspaceMember.role !== 'admin') {
-			throw new Forbidden('you are not allowed to update this member');
-		}
-		console.log(workspaceMember.user._id);
-		console.log(workspace._id);
-		const updatedMember = await Member.findOneAndUpdate(
-			{ user: workspaceMember.user._id, workspace: workspace._id },
-			{ role },
-			{ new: true }
-		);
-		const validatedResource = await checkResource(updatedMember);
-		return validatedResource;
-	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
-		}
+	if (!isWorkspaceOwner || workspaceMember.role !== 'admin') {
+		throw new MemberUpdateNotPermitted();
 	}
+
+	const updatedMember = await Member.findOneAndUpdate(
+		{ user: workspaceMember.user._id, workspace: workspace._id },
+		{ role },
+		{ new: true }
+	);
+	checkResource(updatedMember, MemberUpdatingFailed);
+	return updatedMember;
 };
 
 export const deleteMember = async (
@@ -75,28 +76,33 @@ export const deleteMember = async (
 	user: Express.User
 ) => {
 	const { memberId, workspaceId } = params;
-	try {
-		validateObjectIds([workspaceId, memberId]);
-		const workspace = await findResourceById(WorkSpace, workspaceId);
-		const workspaceOwner = await findResourceById(
-			Member,
-			workspace.owner._id
-		);
+	validateObjectIds([workspaceId, memberId]);
+	const workspace = await findResourceById(
+		WorkSpace,
+		workspaceId,
+		WorkspaceNotFound
+	);
+	const workspaceOwner = await findResourceById(
+		Member,
+		workspace.owner._id,
+		MemberNotFound
+	);
 
-		const workspaceMember = await findResourceById(Member, memberId);
+	const workspaceMember = await findResourceById(
+		Member,
+		memberId,
+		MemberNotFound
+	);
 
-		await isResourceOwner(user.id, workspaceOwner.user._id);
-		await isResourceOwner(user.id, workspaceMember.user._id);
+	await isResourceOwner(user.id, workspaceOwner.user._id);
+	await isResourceOwner(user.id, workspaceMember.user._id);
 
-		await Member.findOneAndDelete({
-			workspace: workspace.id,
-			member: workspaceMember.user.id,
-		});
-
-		return workspace;
-	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
-		}
+	const deletedMember = await Member.findOneAndDelete({
+		workspace: workspace.id,
+		member: workspaceMember.user.id,
+	});
+	if (!deleteMember) {
+		throw new MemberDeletionFailed();
 	}
+	return deletedMember;
 };

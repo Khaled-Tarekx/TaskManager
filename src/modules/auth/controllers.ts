@@ -11,13 +11,7 @@ import {
 	UserNotFound,
 } from './errors/cause';
 import { AuthenticationError, NotFound } from '../../custom-errors/main';
-import {
-	IncorrectPasswordMsg,
-	LoginErrorMsg,
-	TokenGenerationErrorMsg,
-	UserNotFoundMSG,
-	UserRegistraionFailedMSG,
-} from './errors/msg';
+import * as ErrorMsg from './errors/msg';
 
 export const register = async (
 	req: TypedRequestBody<typeof createUserSchema>,
@@ -36,9 +30,9 @@ export const register = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof RegistrationError:
-				next(new AuthenticationError(UserRegistraionFailedMSG));
+				next(new AuthenticationError(ErrorMsg.UserRegistraionFailed));
 			case err instanceof PasswordHashingError:
-				throw new AuthenticationError(IncorrectPasswordMsg);
+				next(new AuthenticationError(ErrorMsg.IncorrectPassword));
 
 			default:
 				next(err);
@@ -62,11 +56,11 @@ export const login = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof LoginError:
-				next(new AuthenticationError(LoginErrorMsg));
+				next(new AuthenticationError(ErrorMsg.LoginError));
 			case err instanceof UserNotFound:
-				next(new NotFound(UserNotFoundMSG));
+				next(new NotFound(ErrorMsg.UserNotFound));
 			case err instanceof TokenCreationFailed:
-				next(new AuthenticationError(TokenGenerationErrorMsg));
+				next(new AuthenticationError(ErrorMsg.TokenGenerationError));
 			default:
 				next(err);
 		}

@@ -14,7 +14,7 @@ import {
 	WorkspaceNotFound,
 	WorkspaceOwnerNotFound,
 } from './errors/cause';
-import { MemberCreationFailed } from '../workspaces/members/errors';
+import { MemberCreationFailed } from '../workspaces/members/errors/cause';
 
 export const createInviteLink = async (
 	inviteData: createInviteDTO,

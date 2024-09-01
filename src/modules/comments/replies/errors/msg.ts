@@ -1,12 +1,12 @@
-const ReplyNotFoundMSG = 'couldnt retreive the requested reply';
-const ReplyCreationFailedMSG = 'reply failed at creation';
-const ReplyEditingFailedMSG = 'reply failed in the editing process';
-const ReplyDeletionFailedMSG = 'reply failed at deleting';
-const ReplyCountFailedMsg = 'reply count was not updated';
+const ReplyNotFound = 'couldnt retreive the requested reply';
+const ReplyCreationFailed = 'reply failed at creation';
+const ReplyEditingFailed = 'reply failed in the editing process';
+const ReplyDeletionFailed = 'reply failed at deleting';
+const ReplyCountFailed = 'reply count was not updated';
 export {
-	ReplyNotFoundMSG,
-	ReplyCreationFailedMSG,
-	ReplyEditingFailedMSG,
-	ReplyDeletionFailedMSG,
-	ReplyCountFailedMsg,
+	ReplyNotFound,
+	ReplyCreationFailed,
+	ReplyEditingFailed,
+	ReplyDeletionFailed,
+	ReplyCountFailed,
 };

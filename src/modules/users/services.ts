@@ -1,4 +1,3 @@
-import { Forbidden } from '../../custom-errors/main';
 import User from './models';
 import { Comment, Reply } from '../comments/models';
 import Task from '../tasks/models';
@@ -9,51 +8,42 @@ import {
 } from '../../utills/helpers';
 
 import type { updateUserDTO } from './types';
+import { ReplyNotFound } from '../comments/replies/errors/cause';
+import { CommentNotFound } from '../comments/errors/cause';
+import { TaskNotFound } from '../tasks/errors/cause';
+import { UserDeletionFailed, UserUpdatingFailed } from './errors/cause';
+import { UserNotFound } from '../auth/errors/cause';
 
 export const getUsers = async () => {
 	return User.find({}).select(' -password');
 };
 
 export const getUser = async (userId: string) => {
-	try {
-		validateObjectIds([userId]);
-		return findResourceById(User, userId);
-	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
-		}
-	}
+	validateObjectIds([userId]);
+	return findResourceById(User, userId, UserNotFound);
 };
 
 export const updateUserInfo = async (
 	updateData: updateUserDTO,
 	user: Express.User
 ) => {
-	try {
-		const updatedUser = await User.findByIdAndUpdate(
-			user.id,
-			{ email: updateData.email, username: updateData.username },
-			{ new: true }
-		);
-		return checkResource(updatedUser);
-	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
-		}
-	}
+	const updatedUser = await User.findByIdAndUpdate(
+		user.id,
+		{ email: updateData.email, username: updateData.username },
+		{ new: true }
+	);
+	checkResource(updatedUser, UserUpdatingFailed);
+	return updatedUser;
 };
 
 export const deleteUser = async (user: Express.User) => {
-	try {
-		const userToDelete = await findResourceById(User, user.id);
+	const userToDelete = await findResourceById(User, user.id, UserNotFound);
 
-		await User.findByIdAndDelete(userToDelete.id);
-		return userToDelete;
-	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
-		}
+	const deletedUser = await User.findByIdAndDelete(userToDelete.id);
+	if (!deletedUser) {
+		throw new UserDeletionFailed();
 	}
+	return deletedUser;
 };
 
 export const getUserReplies = async (user: Express.User) => {
@@ -63,18 +53,13 @@ export const getUserReplies = async (user: Express.User) => {
 };
 
 export const getUserReply = async (replyId: string, user: Express.User) => {
-	try {
-		validateObjectIds([replyId]);
-		const reply = await Reply.findOne({
-			_id: replyId,
-			owner: user.id,
-		});
-		return checkResource(reply);
-	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
-		}
-	}
+	validateObjectIds([replyId]);
+	const reply = await Reply.findOne({
+		_id: replyId,
+		owner: user.id,
+	});
+	checkResource(reply, ReplyNotFound);
+	return reply;
 };
 
 export const getUserComments = async (user: Express.User) => {
@@ -87,18 +72,13 @@ export const getUserComment = async (
 	commentId: string,
 	user: Express.User
 ) => {
-	try {
-		validateObjectIds([commentId]);
-		const comment = await Comment.findOne({
-			_id: commentId,
-			owner: user.id,
-		});
-		return checkResource(comment);
-	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
-		}
-	}
+	validateObjectIds([commentId]);
+	const comment = await Comment.findOne({
+		_id: commentId,
+		owner: user.id,
+	});
+	checkResource(comment, CommentNotFound);
+	return comment;
 };
 
 export const getUserTasks = async (user: Express.User) => {
@@ -107,16 +87,11 @@ export const getUserTasks = async (user: Express.User) => {
 
 export const getUserTask = async (user: Express.User, taskId: string) => {
 	validateObjectIds([taskId]);
-	try {
-		const task = await Task.findOne({
-			owner: user.id,
-			_id: taskId,
-		});
+	const task = await Task.findOne({
+		owner: user.id,
+		_id: taskId,
+	});
 
-		return checkResource(task);
-	} catch (err: unknown) {
-		if (err instanceof Forbidden) {
-			throw new Forbidden(err.message);
-		}
-	}
+	checkResource(task, TaskNotFound);
+	return task;
 };

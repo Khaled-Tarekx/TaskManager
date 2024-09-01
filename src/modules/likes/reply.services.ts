@@ -14,7 +14,7 @@ import {
 	LikeCreationFailed,
 	LikeNotFound,
 	UnLikeFailed,
-} from './errors';
+} from './errors/cause';
 
 export const getReplyLikes = async (replyId: string) => {
 	validateObjectIds([replyId]);
@@ -23,11 +23,7 @@ export const getReplyLikes = async (replyId: string) => {
 
 export const getReplyLike = async (likeId: string) => {
 	validateObjectIds([likeId]);
-	return findResourceById(
-		ReplyLike,
-		likeId,
-		new LikeNotFound('you havent liked this reply')
-	);
+	return findResourceById(ReplyLike, likeId, LikeNotFound);
 };
 
 export const getUserReplyLike = async (
@@ -38,10 +34,7 @@ export const getUserReplyLike = async (
 		owner: user.id,
 		reply: replyId,
 	});
-	return checkResource(
-		userReplyLike,
-		new LikeNotFound('you havent liked this reply')
-	);
+	return checkResource(userReplyLike, LikeNotFound);
 };
 
 export const createReplyLike = async (
@@ -58,11 +51,8 @@ export const createReplyLike = async (
 	const reply = await Reply.findByIdAndUpdate(replyLike.reply._id, {
 		$inc: { likeCount: 1 },
 	});
-	checkResource(
-		reply,
-		new LikeCountUpdateFailed('like count was not updated for this reply')
-	);
-	checkResource(replyLike, new LikeCreationFailed('like creation failed'));
+	checkResource(reply, LikeCountUpdateFailed);
+	checkResource(replyLike, LikeCreationFailed);
 	return replyLike;
 };
 
@@ -71,22 +61,19 @@ export const deleteReplyLike = async (likeId: string, user: Express.User) => {
 	const replyLikeToDelete = await findResourceById(
 		ReplyLike,
 		likeId,
-		new LikeNotFound('no like was found for this reply')
+		LikeNotFound
 	);
 	await isResourceOwner(user.id, replyLikeToDelete.owner._id);
 	const reply = await Reply.findByIdAndUpdate(replyLikeToDelete.reply._id, {
 		$inc: { likeCount: -1 },
 	});
 
-	checkResource(
-		reply,
-		new LikeCountUpdateFailed('like cound was not updated for this reply')
-	);
+	checkResource(reply, LikeCountUpdateFailed);
 	const likeToDelete = await ReplyLike.findByIdAndDelete(
 		replyLikeToDelete.id
 	);
 	if (!likeToDelete) {
-		throw new UnLikeFailed('unlike operation failed');
+		throw new UnLikeFailed();
 	}
 	return replyLikeToDelete;
 };

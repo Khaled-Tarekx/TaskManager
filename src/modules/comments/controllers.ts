@@ -14,97 +14,89 @@ import {
 	CommentUpdateFailed,
 	CommentCountUpdateFailed,
 } from './errors/cause';
-import {
-	CommentNotFoundMSG,
-	CommentCreationFailedMSG,
-	CommentEditingFailedMSG,
-	CommentDeletionFailedMSG,
-	CommentCountFailedMsg,
-} from './errors/msg';
+import * as ErrorMsg from './errors/msg';
 import {
 	AuthenticationError,
 	BadRequestError,
 	Conflict,
 	NotFound,
 } from '../../custom-errors/main';
-import { NotValidId } from '../../utills/errors';
-import { LoginFirst, NotValidIdMsg } from '../../utills/errors.msg';
+import { NotValidId } from '../../utills/errors/cause';
+import * as GlobalErrorMsg from '../../utills/errors/msg';
 import { UserNotFound } from '../auth/errors/cause';
 
-export const getTaskComments = asyncHandler(
-	async (
-		req: Request<{}, {}, {}, taskParam>,
-		res: Response,
-		next: NextFunction
-	) => {
-		const { taskId } = req.query;
-		try {
-			const taskComments = await CommentServices.getTaskComments(taskId);
+export const getTaskComments = async (
+	req: Request<{}, {}, {}, taskParam>,
+	res: Response,
+	next: NextFunction
+) => {
+	const { taskId } = req.query;
+	try {
+		const taskComments = await CommentServices.getTaskComments(taskId);
 
-			res
-				.status(StatusCodes.OK)
-				.json({ data: taskComments, count: taskComments.length });
-		} catch (err: unknown) {
-			switch (true) {
-				case err instanceof NotValidId:
-					next(new BadRequestError(NotValidIdMsg));
-				default:
-					next(err);
-			}
+		res
+			.status(StatusCodes.OK)
+			.json({ data: taskComments, count: taskComments.length });
+	} catch (err: unknown) {
+		switch (true) {
+			case err instanceof NotValidId:
+				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+			default:
+				next(err);
 		}
 	}
-);
+};
 
-export const getComment = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		const { commentId } = req.params;
-		try {
-			const comment = await CommentServices.getComment(commentId);
-			res.status(StatusCodes.OK).json({ data: comment });
-		} catch (err: unknown) {
-			switch (true) {
-				case err instanceof NotValidId:
-					next(new BadRequestError(NotValidIdMsg));
-				case err instanceof CommentNotFound:
-					next(new NotFound(CommentNotFoundMSG));
-				default:
-					next(err);
-			}
+export const getComment = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const { commentId } = req.params;
+	try {
+		const comment = await CommentServices.getComment(commentId);
+		res.status(StatusCodes.OK).json({ data: comment });
+	} catch (err: unknown) {
+		switch (true) {
+			case err instanceof NotValidId:
+				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+			case err instanceof CommentNotFound:
+				next(new NotFound(ErrorMsg.CommentNotFound));
+			default:
+				next(err);
 		}
 	}
-);
+};
 
-export const createComment = asyncHandler(
-	async (
-		req: TypedRequestBody<typeof createCommentSchema>,
-		res: Response,
-		next: NextFunction
-	) => {
-		try {
-			const { taskId, context } = req.body;
-			const user = req.user;
-			checkUser(user);
-			const comment = await CommentServices.createComment(
-				{ taskId, context },
-				user
-			);
-			res.status(StatusCodes.CREATED).json({ data: comment });
-		} catch (err: unknown) {
-			switch (true) {
-				case err instanceof UserNotFound:
-					next(new AuthenticationError(LoginFirst));
-				case err instanceof CommentCreationFailed:
-					next(new Conflict(CommentCreationFailedMSG));
+export const createComment = async (
+	req: TypedRequestBody<typeof createCommentSchema>,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const { taskId, context } = req.body;
+		const user = req.user;
+		checkUser(user);
+		const comment = await CommentServices.createComment(
+			{ taskId, context },
+			user
+		);
+		res.status(StatusCodes.CREATED).json({ data: comment });
+	} catch (err: unknown) {
+		switch (true) {
+			case err instanceof UserNotFound:
+				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+			case err instanceof CommentCreationFailed:
+				next(new Conflict(ErrorMsg.CommentCreationFailed));
 
-				case err instanceof CommentCountUpdateFailed:
-					next(new Conflict(CommentCountFailedMsg));
+			case err instanceof CommentCountUpdateFailed:
+				next(new Conflict(ErrorMsg.CommentCountFailed));
 
-				default:
-					next(err);
-			}
+			default:
+				next(err);
 		}
 	}
-);
+};
 
 export const editComment = async (
 	req: TypedRequestBody<typeof updateCommentSchema>,
@@ -126,49 +118,51 @@ export const editComment = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(LoginFirst));
+				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof NotValidId:
-				next(new BadRequestError(NotValidIdMsg));
+				next(new BadRequestError(GlobalErrorMsg.NotValidId));
 			case err instanceof CommentNotFound:
-				next(new NotFound(CommentNotFoundMSG));
+				next(new NotFound(ErrorMsg.CommentNotFound));
 
 			case err instanceof CommentUpdateFailed:
-				next(new Conflict(CommentEditingFailedMSG));
+				next(new Conflict(ErrorMsg.CommentEditingFailed));
 			default:
 				next(err);
 		}
 	}
 };
 
-export const deleteComment = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		try {
-			const user = req.user;
-			checkUser(user);
-			const { commentId } = req.params;
-			const deletedComment = await CommentServices.deleteComment(
-				user,
-				commentId
-			);
+export const deleteComment = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const user = req.user;
+		checkUser(user);
+		const { commentId } = req.params;
+		const deletedComment = await CommentServices.deleteComment(
+			user,
+			commentId
+		);
 
-			res.status(StatusCodes.OK).json({ data: deletedComment });
-		} catch (err: unknown) {
-			switch (true) {
-				case err instanceof UserNotFound:
-					next(new AuthenticationError(LoginFirst));
-				case err instanceof NotValidId:
-					next(new BadRequestError(NotValidIdMsg));
-				case err instanceof CommentNotFound:
-					next(new NotFound(CommentNotFoundMSG));
+		res.status(StatusCodes.OK).json({ data: deletedComment });
+	} catch (err: unknown) {
+		switch (true) {
+			case err instanceof UserNotFound:
+				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+			case err instanceof NotValidId:
+				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+			case err instanceof CommentNotFound:
+				next(new NotFound(ErrorMsg.CommentNotFound));
 
-				case err instanceof CommentCountUpdateFailed:
-					next(new Conflict(CommentCountFailedMsg));
+			case err instanceof CommentCountUpdateFailed:
+				next(new Conflict(ErrorMsg.CommentCountFailed));
 
-				case err instanceof CommentDeletionFailed:
-					next(new Conflict(CommentDeletionFailedMSG));
-				default:
-					next(err);
-			}
+			case err instanceof CommentDeletionFailed:
+				next(new Conflict(ErrorMsg.CommentDeletionFailed));
+			default:
+				next(err);
 		}
 	}
-);
+};

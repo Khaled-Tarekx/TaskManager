@@ -5,6 +5,9 @@ import { BadRequestError } from '../../custom-errors/main';
 import emailQueue from './queue';
 import { findResourceById } from '../../utills/helpers';
 import { Member } from '../workspaces/models';
+import { MemberNotFound } from '../workspaces/members/errors/cause';
+import { UserNotFound } from '../auth/errors/cause';
+import { MailFailedToSend } from './errors/cause';
 
 export const notifyUserOfUpcomingDeadline = async (task: TaskSchema) => {
 	const currentTime = moment(new Date());
@@ -34,8 +37,12 @@ export const notifyUserOfUpcomingDeadline = async (task: TaskSchema) => {
 
 export const sendNotification = async (message: string, task: TaskSchema) => {
 	try {
-		const member = await findResourceById(Member, task.assignee.id);
-		const user = await findResourceById(User, member.user.id);
+		const member = await findResourceById(
+			Member,
+			task.assignee.id,
+			MemberNotFound
+		);
+		const user = await findResourceById(User, member.user.id, UserNotFound);
 
 		await emailQueue.add({
 			to: `${user.email}`,
@@ -43,10 +50,8 @@ export const sendNotification = async (message: string, task: TaskSchema) => {
 			text: message,
 			date: moment(new Date()).format('DD MM YYYY hh:mm:ss'),
 		});
-	} catch (err: any) {
-		return new BadRequestError(
-			`Failed to add email job to the queue: ${err.message}`
-		);
+	} catch (err: unknown) {
+		return new MailFailedToSend();
 	}
 };
 emailQueue.on('completed', (job) => {
