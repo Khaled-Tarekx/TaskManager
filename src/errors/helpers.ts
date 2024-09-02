@@ -41,30 +41,27 @@ const sendErrorForProd = (error: CustomError, res: Response) => {
 	});
 };
 
-const handleErrorProps = (err: unknown): err is GlobalError => {
-	if (err && typeof err === 'object') {
-		return 'code' in err;
-	}
-	return false;
+const IsGlobalError = (err: unknown): err is GlobalError => {
+	return err instanceof CustomError && typeof err.code === 'number';
 };
 
 const handleDBErrors = (err: unknown) => {
 	if (err instanceof CustomError) {
 		if (err.name === 'CastError') {
-			const isGlobalError = handleErrorProps(err);
+			const isGlobalError = IsGlobalError(err);
 			if (isGlobalError) {
 				handleCastErrorDB(err);
 			}
 		}
 		if (err.code === 11000) {
-			const isGlobalError = handleErrorProps(err);
+			const isGlobalError = IsGlobalError(err);
 			if (isGlobalError) {
 				handleDuplicateFieldErrorDB(err);
 			}
 		}
 
 		if (err.name === 'ValidationError') {
-			const isGlobalError = handleErrorProps(err);
+			const isGlobalError = IsGlobalError(err);
 			if (isGlobalError) {
 				handleValidationErrorDB(err);
 			}
