@@ -41,31 +41,15 @@ const sendErrorForProd = (error: CustomError, res: Response) => {
 	});
 };
 
-const IsGlobalError = (err: unknown): err is GlobalError => {
-	return err instanceof CustomError && typeof err.code === 'number';
-};
-
-const handleDBErrors = (err: unknown) => {
-	if (err instanceof CustomError) {
-		if (err.name === 'CastError') {
-			const isGlobalError = IsGlobalError(err);
-			if (isGlobalError) {
-				handleCastErrorDB(err);
-			}
-		}
-		if (err.code === 11000) {
-			const isGlobalError = IsGlobalError(err);
-			if (isGlobalError) {
-				handleDuplicateFieldErrorDB(err);
-			}
-		}
-
-		if (err.name === 'ValidationError') {
-			const isGlobalError = IsGlobalError(err);
-			if (isGlobalError) {
-				handleValidationErrorDB(err);
-			}
-		}
+const handleDBErrors = (err: GlobalError) => {
+	if (err.name === 'CastError') {
+		handleCastErrorDB(err);
+	} else if (err.code === 11000) {
+		handleDuplicateFieldErrorDB(err);
+	} else if (err.name === 'ValidationError') {
+		handleValidationErrorDB(err);
+	} else {
+		return new CustomError(err.message, StatusCodes.UNPROCESSABLE_ENTITY);
 	}
 };
 
