@@ -15,9 +15,8 @@ const ErrorHandler = (
 			sendErrorForDev(error, res);
 			break;
 		case 'production':
-			let err = { ...error };
-			handleDBErrors(err);
-			sendErrorForProd(err, res);
+			handleDBErrors(error);
+			sendErrorForProd(error, res);
 			break;
 	}
 };

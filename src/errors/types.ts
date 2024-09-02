@@ -20,6 +20,7 @@ interface ValidationError extends CustomError {
 interface GlobalError extends CustomError {
 	path: string;
 	value: string;
+	name: string;
 	code: number;
 	errors: {
 		[key: string]: {
@@ -27,6 +28,6 @@ interface GlobalError extends CustomError {
 		};
 	};
 	errmsg: string;
+	statuscodes: number;
 }
-
 export type { CastError, DuplicateFieldError, ValidationError, GlobalError };

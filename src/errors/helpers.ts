@@ -41,33 +41,34 @@ const sendErrorForProd = (error: CustomError, res: Response) => {
 	});
 };
 
-const handleErrorProps = (err: Partial<GlobalError>): GlobalError => {
-	return {
-		...err,
-		path: err.path || '',
-		value: err.value || '',
-		name: err.name || '',
-		code: err.code || 500,
-		errors: err.errors || {},
-		statusCode: err.statusCode || 500,
-		message: err.message || 'An unknown error occurred',
-		errmsg: err.errmsg || 'db error msg',
-	};
+const handleErrorProps = (err: unknown): err is GlobalError => {
+	if (err && typeof err === 'object') {
+		return 'code' in err;
+	}
+	return false;
 };
 
-const handleDBErrors = (err: GlobalError) => {
-	if (err.name === 'CastError') {
-		err = handleErrorProps(err);
-		handleCastErrorDB(err);
-	}
-	if (err.code === 11000) {
-		err = handleErrorProps(err);
-		handleDuplicateFieldErrorDB(err);
-	}
+const handleDBErrors = (err: unknown) => {
+	if (err instanceof CustomError) {
+		if (err.name === 'CastError') {
+			const isGlobalError = handleErrorProps(err);
+			if (isGlobalError) {
+				handleCastErrorDB(err);
+			}
+		}
+		if (err.code === 11000) {
+			const isGlobalError = handleErrorProps(err);
+			if (isGlobalError) {
+				handleDuplicateFieldErrorDB(err);
+			}
+		}
 
-	if (err.name === 'ValidationError') {
-		err = handleErrorProps(err);
-		handleValidationErrorDB(err);
+		if (err.name === 'ValidationError') {
+			const isGlobalError = handleErrorProps(err);
+			if (isGlobalError) {
+				handleValidationErrorDB(err);
+			}
+		}
 	}
 };
 
