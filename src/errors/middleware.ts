@@ -1,14 +1,25 @@
-import CustomError from '../custom-errors/custom-error';
 import type { NextFunction, Request, Response } from 'express';
+import { GlobalError } from './types';
+import { handleDBErrors, sendErrorForDev, sendErrorForProd } from './helpers';
 
 const ErrorHandler = (
-	error: CustomError,
+	error: GlobalError,
 	req: Request,
 	res: Response,
 	next: NextFunction
 ) => {
-	const statusCode = error.statusCode || 500;
-	res.status(statusCode).json({ error: error.message });
+	error.statusCode || 500;
+
+	switch (process.env.NODE_ENV) {
+		case 'development':
+			sendErrorForDev(error, res);
+			break;
+		case 'production':
+			let err = { ...error };
+			handleDBErrors(err);
+			sendErrorForProd(err, res);
+			break;
+	}
 };
 
 export default ErrorHandler;
