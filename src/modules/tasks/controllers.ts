@@ -31,7 +31,7 @@ import {
 	NotResourceOwner,
 	NotValidId,
 	WorkspaceMismatch,
-} from 'src/utills/errors/cause';
+} from '../../utills/errors/cause';
 
 export const getTasks = async (_req: Request, res: Response) => {
 	const tasks = await TaskServices.getTasks();

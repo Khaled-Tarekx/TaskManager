@@ -16,7 +16,7 @@ import swaggerSpec from '../setup/swagger';
 import cors from 'cors';
 import { getTasksPage } from '../modules/tasks/controllers';
 
-const secret = process.env.SECRET_KEY;
+const secret = process.env.ACCESS_SECRET_KEY;
 
 const bootstrap = (app: Application) => {
 	const authentication = passport.authenticate('jwt');

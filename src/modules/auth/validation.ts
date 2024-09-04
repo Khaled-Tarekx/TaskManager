@@ -54,3 +54,10 @@ export const loginSchema = z.object({
 		.min(5, 'password cant be less than 6 characters')
 		.max(255, 'password cant be less than 255 characters'),
 });
+
+export const tokenSchema = z.object({
+	refreshToken: z.string({
+		required_error: 'refreshToken is required',
+		invalid_type_error: 'refreshToken must be a string',
+	}),
+});

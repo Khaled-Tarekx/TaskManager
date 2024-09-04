@@ -1,5 +1,9 @@
 import type { z } from 'zod';
-import type { createUserSchema, loginSchema } from './validation';
+import type {
+	createUserSchema,
+	loginSchema,
+	tokenSchema,
+} from './validation';
 
 export enum Roles {
 	user = 'user',

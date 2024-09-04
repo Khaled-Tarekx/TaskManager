@@ -5,17 +5,17 @@ import { type AnyZodObject, ZodError } from 'zod';
 import type { NextFunction, Request, Response } from 'express';
 import { asyncHandler } from './middleware';
 import { compare, hash } from 'bcrypt';
-import type { HydratedDocument } from 'mongoose';
+import type { HydratedDocument, InferRawDocType } from 'mongoose';
 import {
 	PasswordComparisionError,
 	PasswordHashingError,
 	UserNotFound,
 } from './errors/cause';
 
-const secret = process.env.SECRET_KEY;
-
 export const createTokenFromUser = async (
-	user: HydratedDocument<UserSchema>
+	user: InferRawDocType<UserSchema>,
+	secret: string,
+	expires?: string
 ) => {
 	const tokenUser = await User.findOne({ email: user.email });
 
@@ -23,8 +23,8 @@ export const createTokenFromUser = async (
 		throw UserNotFound;
 	}
 
-	return jwt.sign({ id: tokenUser.id, roles: tokenUser.roles }, secret, {
-		expiresIn: '1d',
+	return jwt.sign({ id: tokenUser._id, roles: tokenUser.roles }, secret, {
+		expiresIn: expires,
 	});
 };
 
