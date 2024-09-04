@@ -16,7 +16,7 @@ import { NotResourceOwner, NotValidId } from '../../../utills/errors/cause';
 import { Forbidden, NotFound } from '../../../custom-errors/main';
 import { WorkspaceNotFound } from '../errors/cause';
 import * as ErrorMsg from './errors/msg';
-import * as UserErrorMsg from '../../users/errors/msg';
+import * as AuthErrorMsg from '../../auth/errors/msg';
 import * as GlobalErrorMsg from '../../../utills/errors/msg';
 
 import * as WorkspaceErrorMsg from '../../workspaces/errors/msg';
@@ -34,7 +34,7 @@ export const getMemberByUsername = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new NotFound(UserErrorMsg.UserNotFound));
+				next(new NotFound(AuthErrorMsg.UserNotFound));
 			case err instanceof MemberNotFound:
 				next(new NotFound(ErrorMsg.MemberNotFound));
 			default:

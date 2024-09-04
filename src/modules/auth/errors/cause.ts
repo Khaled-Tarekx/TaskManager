@@ -19,13 +19,24 @@ class UserNotFound extends Error {
 	}
 }
 
+class RefreshTokenNotFound extends Error {
+	constructor() {
+		super('couldnt find refresh token');
+		this.name = 'RefreshTokenNotFound';
+	}
+}
 class TokenCreationFailed extends Error {
 	constructor() {
 		super('failed to create the token');
 		this.name = 'TokenCreationFailed';
 	}
 }
-
+class TokenVerificationFailed extends Error {
+	constructor() {
+		super('failed to verify the token');
+		this.name = 'TokenVerificationFailed';
+	}
+}
 export {
 	LoginError,
 	UserNotFound,
@@ -33,4 +44,6 @@ export {
 	TokenCreationFailed,
 	PasswordComparisionError,
 	PasswordHashingError,
+	RefreshTokenNotFound,
+	TokenVerificationFailed,
 };

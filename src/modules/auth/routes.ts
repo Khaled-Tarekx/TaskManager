@@ -1,7 +1,7 @@
 import express from 'express';
-import { login, register } from './controllers';
+import { login, refreshToken, register } from './controllers';
 import { validateResource } from './utillities';
-import { loginSchema, createUserSchema } from './validation';
+import { loginSchema, createUserSchema, tokenSchema } from './validation';
 
 const router = express.Router();
 
@@ -11,5 +11,8 @@ router
 router
 	.route('/login')
 	.post(validateResource({ bodySchema: loginSchema }), login);
+router
+	.route('/refresh-token')
+	.post(validateResource({ bodySchema: tokenSchema }), refreshToken);
 
 export default router;

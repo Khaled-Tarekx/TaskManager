@@ -1,13 +1,15 @@
 import type { NextFunction, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { createUserSchema, loginSchema } from './validation';
+import { createUserSchema, loginSchema, tokenSchema } from './validation';
 import type { TypedRequestBody } from 'zod-express-middleware';
 import * as AuthServices from './services';
 import {
 	LoginError,
 	PasswordHashingError,
+	RefreshTokenNotFound,
 	RegistrationError,
 	TokenCreationFailed,
+	TokenVerificationFailed,
 	UserNotFound,
 } from './errors/cause';
 import { AuthenticationError, NotFound } from '../../custom-errors/main';
@@ -47,12 +49,12 @@ export const login = async (
 ) => {
 	const { email, password } = req.body;
 	try {
-		const token = await AuthServices.login({
+		const data = await AuthServices.login({
 			email,
 			password,
 		});
 
-		res.status(StatusCodes.CREATED).json({ token });
+		res.status(StatusCodes.OK).json(data);
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof LoginError:
@@ -61,6 +63,32 @@ export const login = async (
 				next(new NotFound(ErrorMsg.UserNotFound));
 			case err instanceof TokenCreationFailed:
 				next(new AuthenticationError(ErrorMsg.TokenGenerationError));
+			default:
+				next(err);
+		}
+	}
+};
+
+export const refreshToken = async (
+	req: TypedRequestBody<typeof tokenSchema>,
+	res: Response,
+	next: NextFunction
+) => {
+	const { refreshToken } = req.body;
+	try {
+		const data = await AuthServices.token(refreshToken);
+
+		res.status(StatusCodes.CREATED).json(data);
+	} catch (err: unknown) {
+		switch (true) {
+			case err instanceof UserNotFound:
+				next(new NotFound(ErrorMsg.UserNotFound));
+			case err instanceof RefreshTokenNotFound:
+				next(new AuthenticationError(ErrorMsg.TokenNotFound));
+			case err instanceof TokenCreationFailed:
+				next(new AuthenticationError(ErrorMsg.TokenGenerationError));
+			case err instanceof TokenVerificationFailed:
+				next(new AuthenticationError(ErrorMsg.TokenVerificationFailed));
 			default:
 				next(err);
 		}

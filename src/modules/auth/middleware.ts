@@ -2,16 +2,12 @@ import { ExtractJwt, Strategy, type StrategyOptions } from 'passport-jwt';
 import passport from 'passport';
 import User, { UserSchema } from '../users/models';
 import type { NextFunction, Request, Response } from 'express';
-import {
-	NotFound,
-	AuthenticationError,
-	CustomError,
-} from '../../custom-errors/main';
-import { StatusCodes } from 'http-status-codes';
+import { CustomError } from '../../custom-errors/main';
 import type { Roles } from './types';
 import { InferRawDocType } from 'mongoose';
+import { TokenVerificationFailed, UserNotFound } from './errors/cause';
 
-const secret = process.env.SECRET_KEY;
+const secret = process.env.ACCESS_SECRET_KEY;
 
 const opts: StrategyOptions = {
 	jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -31,7 +27,7 @@ passport.deserializeUser(async (id, done: callbackType) => {
 	try {
 		const user = await User.findById(id);
 		if (!user) {
-			throw new CustomError('user not found', StatusCodes.NOT_FOUND);
+			throw new UserNotFound();
 		}
 		done(null, user);
 	} catch (err: unknown) {
@@ -48,17 +44,11 @@ export default passport.use(
 	new Strategy(opts, async (jwt_payload: jwtPayload, done) => {
 		try {
 			if (!jwt_payload.id) {
-				return done(
-					new AuthenticationError('Invalid token: subject missing'),
-					false
-				);
+				return done(new TokenVerificationFailed(), false);
 			}
 			const user = await User.findById(jwt_payload.id);
 			if (!user) {
-				return done(
-					new NotFound('user not authenticated or not found'),
-					false
-				);
+				return done(new UserNotFound(), false);
 			} else {
 				return done(null, user);
 			}
