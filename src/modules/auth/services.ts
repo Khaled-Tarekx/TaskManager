@@ -20,6 +20,8 @@ import UserRefreshToken from './models';
 const saltRounds = process.env.SALT_ROUNTS;
 const access_secret = process.env.ACCESS_SECRET_KEY;
 const refresh_secret = process.env.REFRESH_SECRET_KEY;
+const access_expire = process.env.ACCESS_EXPIRE;
+const refresh_expire = process.env.REFRESH_EXPIRE;
 
 export const createUser = async (userData: createUserDTO) => {
 	const { username, email, password, position } = userData;
@@ -49,8 +51,16 @@ export const login = async (loginData: loginDTO) => {
 	);
 	checkResource(updatedUser, UserNotFound);
 
-	const accessToken = await createTokenFromUser(user, access_secret, '1d');
-	const refreshToken = await createTokenFromUser(user, refresh_secret, '2d');
+	const accessToken = await createTokenFromUser(
+		user,
+		access_secret,
+		access_expire
+	);
+	const refreshToken = await createTokenFromUser(
+		user,
+		refresh_secret,
+		refresh_expire
+	);
 
 	checkResource(accessToken, TokenCreationFailed);
 	checkResource(refreshToken, TokenCreationFailed);
@@ -78,11 +88,15 @@ export const token = async (refresh_token: string) => {
 
 		await UserRefreshToken.findByIdAndDelete(userRefreshToken._id);
 
-		const accessToken = await createTokenFromUser(user, access_secret, '1d');
+		const accessToken = await createTokenFromUser(
+			user,
+			access_secret,
+			access_expire
+		);
 		const newRefreshToken = await createTokenFromUser(
 			user,
 			refresh_secret,
-			'2d'
+			refresh_expire
 		);
 
 		checkResource(accessToken, TokenCreationFailed);
