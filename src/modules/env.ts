@@ -20,5 +20,7 @@ export const env = z
 		DEBUG: z.string(),
 		BASE_URL: z.string(),
 		DEFAULT_EXPIRATION_CASHE: z.string(),
+		SUBABASE_API_KEY: z.string(),
+		SUBABASE_URL: z.string(),
 	})
 	.parse(process.env);

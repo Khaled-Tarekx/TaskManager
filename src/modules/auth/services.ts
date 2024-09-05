@@ -16,6 +16,7 @@ import {
 } from './errors/cause';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import UserRefreshToken from './models';
+import { supabase } from './supabase';
 
 const saltRounds = process.env.SALT_ROUNTS;
 const access_secret = process.env.ACCESS_SECRET_KEY;
@@ -36,6 +37,7 @@ export const createUser = async (userData: createUserDTO) => {
 	checkResource(user, RegistrationError);
 	return user;
 };
+
 export const login = async (loginData: loginDTO) => {
 	const { email, password } = loginData;
 	const user = await User.findOne({ email });
@@ -115,4 +117,68 @@ export const token = async (refresh_token: string) => {
 		)
 			throw new TokenVerificationFailed();
 	}
+};
+
+export const registerUser = async (userInput: createUserDTO) => {
+	const { username, email, password, position } = userInput;
+	const hashedPassword = await hashPassword(password, saltRounds);
+
+	const user = await User.create({
+		username,
+		email,
+		password: hashedPassword,
+		position,
+	});
+	const userData = { position, role: user.roles };
+	checkResource(user, RegistrationError);
+	const { data, error } = await supabase.auth.signUp({
+		email,
+		password,
+		options: { data: { userData } },
+	});
+
+	if (error) {
+		console.log(error.message);
+		throw new RegistrationError();
+	}
+
+	return data;
+};
+
+export const loginUser = async (logininput: loginDTO) => {
+	const { email, password } = logininput;
+	const { data, error } = await supabase.auth.signInWithPassword({
+		email,
+		password,
+	});
+
+	if (error) {
+		throw new UserNotFound();
+	}
+	const updatedUser = await User.findOneAndUpdate(
+		{ email: data.user.email },
+		{ isLoggedIn: true },
+		{ new: true }
+	);
+	checkResource(updatedUser, UserNotFound);
+
+	const jwtToken = data.session.access_token;
+	const refreshToken = data.session.refresh_token;
+	const userData = {
+		email: data.user.email,
+		id: data.user.id,
+	};
+	return { jwtToken, refreshToken, userData };
+};
+
+export const refreshSession = async (refresh_token: string) => {
+	const { data, error } = await supabase.auth.refreshSession({
+		refresh_token,
+	});
+
+	if (error) {
+		throw new TokenCreationFailed();
+	}
+
+	return data;
 };

@@ -1,6 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { asyncHandler } from '../auth/middleware';
 import { createWorkSpaceSchema, updateWorkSpaceSchema } from './validation';
 
 import type { TypedRequestBody } from 'zod-express-middleware';
