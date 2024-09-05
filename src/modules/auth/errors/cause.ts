@@ -37,6 +37,13 @@ class TokenVerificationFailed extends Error {
 		this.name = 'TokenVerificationFailed';
 	}
 }
+
+class UnAuthorized extends Error {
+	constructor() {
+		super('UnAuthorized');
+		this.name = 'UnAuthorized';
+	}
+}
 export {
 	LoginError,
 	UserNotFound,
@@ -46,4 +53,5 @@ export {
 	PasswordHashingError,
 	RefreshTokenNotFound,
 	TokenVerificationFailed,
+	UnAuthorized,
 };

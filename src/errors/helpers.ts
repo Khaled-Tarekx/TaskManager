@@ -26,8 +26,7 @@ const handleValidationErrorDB = (err: ValidationError) => {
 };
 
 const sendErrorForDev = (error: CustomError, res: Response) => {
-	res.status(error.statusCode).json({
-		status: error.statusCode,
+	return res.status(error.statusCode).json({
 		message: error.message,
 		error,
 		stack: error.stack,
@@ -35,7 +34,7 @@ const sendErrorForDev = (error: CustomError, res: Response) => {
 };
 
 const sendErrorForProd = (error: CustomError, res: Response) => {
-	res.status(error.statusCode).json({
+	return res.status(error.statusCode).json({
 		status: error.statusCode,
 		message: error.message,
 	});

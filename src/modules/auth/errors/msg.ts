@@ -5,6 +5,8 @@ const TokenNotFound = 'couldnt find the requested token';
 const IncorrectPassword = 'password either incorrect or invalid';
 const TokenGenerationError = 'failed to create token from user';
 const TokenVerificationFailed = 'token verification failed';
+const LoggingOutFailed = 'logging out failed';
+
 export {
 	UserNotFound,
 	UserRegistraionFailed,
@@ -13,4 +15,5 @@ export {
 	IncorrectPassword,
 	TokenNotFound,
 	TokenVerificationFailed,
+	LoggingOutFailed,
 };

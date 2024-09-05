@@ -1,6 +1,5 @@
 import type { NextFunction, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { asyncHandler } from '../auth/middleware';
 import type {
 	createInviteSchema,
 	acceptInvitationSchema,

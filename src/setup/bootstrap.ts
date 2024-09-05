@@ -1,6 +1,5 @@
 import passport from 'passport';
 import express, { Application } from 'express';
-import session from 'express-session';
 import ErrorHandler from '../errors/middleware';
 import UserRouter from '../modules/users/routes';
 import AuthRouter from '../modules/auth/routes';
@@ -16,26 +15,14 @@ import swaggerSpec from '../setup/swagger';
 import cors from 'cors';
 import { getTasksPage } from '../modules/tasks/controllers';
 
-const secret = process.env.ACCESS_SECRET_KEY;
-
 const bootstrap = (app: Application) => {
 	const authentication = passport.authenticate('jwt');
 	app.use(express.json());
 	app.use(cors());
-	app.use(
-		session({
-			secret: secret,
-			resave: false,
-			saveUninitialized: true,
-			cookie: { secure: false },
-		})
-	);
 
 	app.use('/api/v1', AuthRouter);
 	app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-	app.use(passport.initialize());
-	app.use(passport.session());
 	app.get('/tasks', getTasksPage);
 	app.set('view engine', 'ejs');
 
