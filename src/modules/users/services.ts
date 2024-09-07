@@ -1,4 +1,4 @@
-import User from './models';
+import UserModel from './models';
 import { Comment, Reply } from '../comments/models';
 import Task from '../tasks/models';
 import {
@@ -13,33 +13,44 @@ import { CommentNotFound } from '../comments/errors/cause';
 import { TaskNotFound } from '../tasks/errors/cause';
 import { UserDeletionFailed, UserUpdatingFailed } from './errors/cause';
 import { UserNotFound } from '../auth/errors/cause';
+import { supabase } from '../auth/supabase';
+import { User } from '@supabase/supabase-js';
 
-export const getUsers = async () => {
-	return User.find({}).select(' -password');
+export const getUsers = async (user: Express.User) => {
+	return UserModel.find({}).select(' -password');
 };
 
 export const getUser = async (userId: string) => {
 	validateObjectIds([userId]);
-	return findResourceById(User, userId, UserNotFound);
+
+	return findResourceById(UserModel, userId, UserNotFound);
 };
 
 export const updateUserInfo = async (
 	updateData: updateUserDTO,
 	user: Express.User
 ) => {
-	const updatedUser = await User.findByIdAndUpdate(
-		user.id,
-		{ email: updateData.email, username: updateData.username },
+	const updatedUser = await UserModel.findOneAndUpdate(
+		{
+			email: user.email,
+		},
+		{ ...updateData },
 		{ new: true }
 	);
 	checkResource(updatedUser, UserUpdatingFailed);
+	await supabase.auth.updateUser({
+		data: { ...updateData },
+		email: updateData.email,
+	});
 	return updatedUser;
 };
 
 export const deleteUser = async (user: Express.User) => {
-	const userToDelete = await findResourceById(User, user.id, UserNotFound);
+	const userToDelete = await UserModel.findOne({ email: user.email });
+	checkResource(userToDelete, UserNotFound);
 
-	const deletedUser = await User.findByIdAndDelete(userToDelete.id);
+	await supabase.auth.admin.deleteUser(user.supaId!);
+	const deletedUser = await UserModel.findByIdAndDelete(userToDelete.id);
 	if (!deletedUser) {
 		throw new UserDeletionFailed();
 	}
@@ -47,6 +58,8 @@ export const deleteUser = async (user: Express.User) => {
 };
 
 export const getUserReplies = async (user: Express.User) => {
+	console.log(user);
+	console.log(user.id);
 	return Reply.find({
 		owner: user.id,
 	});

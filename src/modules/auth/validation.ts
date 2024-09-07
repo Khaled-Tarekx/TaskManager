@@ -17,13 +17,10 @@ export const createUserSchema = z.object({
 		.email({ message: 'Invalid email address' })
 		.regex(regexString),
 
-	password: z
-		.string({
-			required_error: 'password is required',
-			invalid_type_error: 'password must be a string',
-		})
-		.min(5, 'password cant be less than 6 characters')
-		.max(255, 'password cant be less than 255 characters'),
+	password: z.string({
+		required_error: 'password is required',
+		invalid_type_error: 'password must be a string',
+	}),
 
 	isLoggedIn: z
 		.boolean({
@@ -55,9 +52,27 @@ export const loginSchema = z.object({
 		.max(255, 'password cant be less than 255 characters'),
 });
 
-export const tokenSchema = z.object({
-	refreshToken: z.string({
-		required_error: 'refreshToken is required',
-		invalid_type_error: 'refreshToken must be a string',
+export const refreshTokenSchema = z.object({
+	refresh_token: z.string({
+		required_error: 'refresh Token is required',
+		invalid_type_error: 'refresh Token must be a string',
+	}),
+});
+
+export const resetPasswordSchema = z.object({
+	email: z.string({
+		required_error: 'email is required',
+		invalid_type_error: 'email must be a string',
+	}),
+});
+
+export const changePasswordSchema = z.object({
+	oldPassword: z.string({
+		required_error: 'old password is required',
+		invalid_type_error: 'old password must be a string',
+	}),
+	password: z.string({
+		required_error: 'password is required',
+		invalid_type_error: 'password must be a string',
 	}),
 });

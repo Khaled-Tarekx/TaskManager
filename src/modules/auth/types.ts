@@ -1,10 +1,11 @@
 import type { z } from 'zod';
 import type {
+	changePasswordSchema,
 	createUserSchema,
 	loginSchema,
-	tokenSchema,
+	refreshTokenSchema,
+	resetPasswordSchema,
 } from './validation';
-import { JwtPayload } from 'jsonwebtoken';
 
 export enum Roles {
 	user = 'user',
@@ -15,8 +16,9 @@ export enum Position {
 	front_end = 'Front-End',
 	back_end = 'Back-End',
 }
-export interface CustomJwtPayload extends JwtPayload {
-	id: string;
-}
+
+export type changePasswordDTO = z.infer<typeof changePasswordSchema>;
+export type resetpasswordDTO = z.infer<typeof resetPasswordSchema>;
+export type refreshSessionDTO = z.infer<typeof refreshTokenSchema>;
 export type createUserDTO = z.infer<typeof createUserSchema>;
 export type loginDTO = z.infer<typeof loginSchema>;

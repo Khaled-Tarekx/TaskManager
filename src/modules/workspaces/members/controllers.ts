@@ -34,11 +34,11 @@ export const getMemberByUsername = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new NotFound(AuthErrorMsg.UserNotFound));
+				return next(new NotFound(AuthErrorMsg.UserNotFound));
 			case err instanceof MemberNotFound:
-				next(new NotFound(ErrorMsg.MemberNotFound));
+				return next(new NotFound(ErrorMsg.MemberNotFound));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -63,21 +63,21 @@ export const updateMemberPermissions = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new NotFound(GlobalErrorMsg.LoginFirst));
+				return next(new NotFound(GlobalErrorMsg.LoginFirst));
 			case err instanceof NotValidId:
-				next(new NotFound(GlobalErrorMsg.NotValidId));
+				return next(new NotFound(GlobalErrorMsg.NotValidId));
 			case err instanceof InvalidRole:
-				next(new Forbidden(ErrorMsg.InvalidRole));
+				return next(new Forbidden(ErrorMsg.InvalidRole));
 			case err instanceof WorkspaceNotFound:
-				next(new Forbidden(WorkspaceErrorMsg.WorkspaceNotFound));
+				return next(new Forbidden(WorkspaceErrorMsg.WorkspaceNotFound));
 			case err instanceof MemberNotFound:
-				next(new Forbidden(ErrorMsg.MemberNotFound));
+				return next(new Forbidden(ErrorMsg.MemberNotFound));
 			case err instanceof MemberUpdateNotPermitted:
-				next(new Forbidden(ErrorMsg.MemberUpdateNotPermitted));
+				return next(new Forbidden(ErrorMsg.MemberUpdateNotPermitted));
 			case err instanceof MemberUpdatingFailed:
-				next(new Forbidden(ErrorMsg.MemberUpdatingFailed));
+				return next(new Forbidden(ErrorMsg.MemberUpdatingFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -100,19 +100,19 @@ export const deleteMember = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new NotFound(GlobalErrorMsg.LoginFirst));
+				return next(new NotFound(GlobalErrorMsg.LoginFirst));
 			case err instanceof NotValidId:
-				next(new NotFound(GlobalErrorMsg.NotValidId));
+				return next(new NotFound(GlobalErrorMsg.NotValidId));
 			case err instanceof WorkspaceNotFound:
-				next(new Forbidden(WorkspaceErrorMsg.WorkspaceNotFound));
+				return next(new Forbidden(WorkspaceErrorMsg.WorkspaceNotFound));
 			case err instanceof MemberNotFound:
-				next(new Forbidden(ErrorMsg.MemberNotFound));
+				return next(new Forbidden(ErrorMsg.MemberNotFound));
 			case err instanceof NotResourceOwner:
-				next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
+				return next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
 			case err instanceof MemberDeletionFailed:
-				next(new Forbidden(ErrorMsg.MemberDeletionFailed));
+				return next(new Forbidden(ErrorMsg.MemberDeletionFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };

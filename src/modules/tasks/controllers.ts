@@ -96,15 +96,15 @@ export const createTask = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof MemberNotFound:
-				next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
+				return next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
 			case err instanceof TaskCreationFailed:
-				next(new Conflict(ErrorMsg.TaskCreationFailed));
+				return next(new Conflict(ErrorMsg.TaskCreationFailed));
 			case err instanceof MailFailedToSend:
-				next(new Conflict(ErrorMsg.MailFailedToSend));
+				return next(new Conflict(ErrorMsg.MailFailedToSend));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -135,20 +135,19 @@ export const updateTask = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof TaskNotFound:
-				next(new NotFound(ErrorMsg.TaskNotFound));
+				return next(new NotFound(ErrorMsg.TaskNotFound));
 			case err instanceof MemberNotFound:
-				next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
+				return next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
 			case err instanceof NotResourceOwner:
-				next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
-
+				return next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
 			case err instanceof TaskUpdatingFailed:
-				next(new Conflict(ErrorMsg.TaskUpdatingFailed));
+				return next(new Conflict(ErrorMsg.TaskUpdatingFailed));
 			case err instanceof MailFailedToSend:
-				next(new Conflict(ErrorMsg.MailFailedToSend));
+				return next(new Conflict(ErrorMsg.MailFailedToSend));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -168,18 +167,18 @@ export const deleteTask = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof TaskNotFound:
-				next(new NotFound(ErrorMsg.TaskNotFound));
+				return next(new NotFound(ErrorMsg.TaskNotFound));
 			case err instanceof MemberNotFound:
-				next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
+				return next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
 			case err instanceof NotResourceOwner:
-				next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
+				return next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
 
 			case err instanceof TaskDeletionFailed:
-				next(new Conflict(ErrorMsg.TaskDeletionFailed));
+				return next(new Conflict(ErrorMsg.TaskDeletionFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -205,23 +204,23 @@ export const assignTask = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof NotValidId:
-				next(new AuthenticationError(GlobalErrorMsg.NotValidId));
+				return next(new AuthenticationError(GlobalErrorMsg.NotValidId));
 			case err instanceof TaskNotFound:
-				next(new NotFound(ErrorMsg.TaskNotFound));
+				return next(new NotFound(ErrorMsg.TaskNotFound));
 			case err instanceof MemberNotFound:
-				next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
+				return next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
 			case err instanceof NotResourceOwner:
-				next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
+				return next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
 			case err instanceof WorkspaceMismatch:
-				next(new Conflict(GlobalErrorMsg.WorkspaceMismatch));
+				return next(new Conflict(GlobalErrorMsg.WorkspaceMismatch));
 			case err instanceof TaskUpdatingFailed:
-				next(new Conflict(ErrorMsg.TaskUpdatingFailed));
+				return next(new Conflict(ErrorMsg.TaskUpdatingFailed));
 			case err instanceof MailFailedToSend:
-				next(new Conflict(ErrorMsg.MailFailedToSend));
+				return next(new Conflict(ErrorMsg.MailFailedToSend));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -240,25 +239,25 @@ export const markCompleted = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof NotValidId:
-				next(new AuthenticationError(GlobalErrorMsg.NotValidId));
+				return next(new AuthenticationError(GlobalErrorMsg.NotValidId));
 			case err instanceof TaskNotFound:
-				next(new NotFound(ErrorMsg.TaskNotFound));
+				return next(new NotFound(ErrorMsg.TaskNotFound));
 			case err instanceof MemberNotFound:
-				next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
+				return next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
 			case err instanceof NotResourceOwner:
-				next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
+				return next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
 			case err instanceof AssigneeNotFound:
-				next(new NotFound(ErrorMsg.AssigneeNotFound));
+				return next(new NotFound(ErrorMsg.AssigneeNotFound));
 			case err instanceof CompleteTaskDependenciesFirst:
-				next(new Conflict(ErrorMsg.CompleteTaskDependenciesFirst));
+				return next(new Conflict(ErrorMsg.CompleteTaskDependenciesFirst));
 			case err instanceof TaskMarkedCompleted:
-				next(new Conflict(ErrorMsg.TaskAlreadyMarked));
+				return next(new Conflict(ErrorMsg.TaskAlreadyMarked));
 			case err instanceof TaskUpdatingFailed:
-				next(new Conflict(ErrorMsg.TaskUpdatingFailed));
+				return next(new Conflict(ErrorMsg.TaskUpdatingFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };

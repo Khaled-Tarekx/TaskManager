@@ -1,4 +1,3 @@
-import passport from 'passport';
 import express, { Application } from 'express';
 import ErrorHandler from '../errors/middleware';
 import UserRouter from '../modules/users/routes';
@@ -14,9 +13,9 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from '../setup/swagger';
 import cors from 'cors';
 import { getTasksPage } from '../modules/tasks/controllers';
+import { authMiddleware } from '../modules/auth/middleware';
 
 const bootstrap = (app: Application) => {
-	const authentication = passport.authenticate('jwt');
 	app.use(express.json());
 	app.use(cors());
 
@@ -28,7 +27,7 @@ const bootstrap = (app: Application) => {
 
 	app.use('/uploads', express.static('uploads'));
 
-	app.use(authentication);
+	app.use(authMiddleware);
 	app.use('/api/v1/users', UserRouter);
 	app.use('/api/v1/invitation', InvitationRouter);
 	app.use('/api/v1/workspaces', WorkSpaceRouter);

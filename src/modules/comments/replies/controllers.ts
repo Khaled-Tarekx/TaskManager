@@ -51,9 +51,9 @@ export const getReply = async (
 		res.status(StatusCodes.OK).json({ data: reply });
 	} catch (err: unknown) {
 		if (err instanceof ReplyNotFound) {
-			next(new NotFound(ErrorMsg.ReplyNotFound));
+			return next(new NotFound(ErrorMsg.ReplyNotFound));
 		} else {
-			next(err);
+			return next(err);
 		}
 	}
 };
@@ -77,15 +77,15 @@ export const createReply = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof ReplyCreationFailed:
-				next(new Conflict(ErrorMsg.ReplyCreationFailed));
+				return next(new Conflict(ErrorMsg.ReplyCreationFailed));
 
 			case err instanceof ReplyCountUpdateFailed:
-				next(new Conflict(ErrorMsg.ReplyCountFailed));
+				return next(new Conflict(ErrorMsg.ReplyCountFailed));
 
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -111,16 +111,16 @@ export const editReply = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof NotValidId:
-				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+				return next(new BadRequestError(GlobalErrorMsg.NotValidId));
 			case err instanceof ReplyNotFound:
-				next(new NotFound(ErrorMsg.ReplyNotFound));
+				return next(new NotFound(ErrorMsg.ReplyNotFound));
 
 			case err instanceof ReplyUpdateFailed:
-				next(new Conflict(ErrorMsg.ReplyEditingFailed));
+				return next(new Conflict(ErrorMsg.ReplyEditingFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -139,19 +139,19 @@ export const deleteReply = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof NotValidId:
-				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+				return next(new BadRequestError(GlobalErrorMsg.NotValidId));
 			case err instanceof ReplyNotFound:
-				next(new NotFound(ErrorMsg.ReplyNotFound));
+				return next(new NotFound(ErrorMsg.ReplyNotFound));
 
 			case err instanceof ReplyCountUpdateFailed:
-				next(new Conflict(ErrorMsg.ReplyCountFailed));
+				return next(new Conflict(ErrorMsg.ReplyCountFailed));
 
 			case err instanceof ReplyDeletionFailed:
-				next(new Conflict(ErrorMsg.ReplyDeletionFailed));
+				return next(new Conflict(ErrorMsg.ReplyDeletionFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };

@@ -27,6 +27,7 @@ const handleValidationErrorDB = (err: ValidationError) => {
 
 const sendErrorForDev = (error: CustomError, res: Response) => {
 	return res.status(error.statusCode).json({
+		status: error.statusCode,
 		message: error.message,
 		error,
 		stack: error.stack,
@@ -40,15 +41,23 @@ const sendErrorForProd = (error: CustomError, res: Response) => {
 	});
 };
 
+export const isDBError = (err: GlobalError): boolean => {
+	return (
+		err.name === 'CastError' ||
+		err.code === 11000 ||
+		err.name === 'ValidationError'
+	);
+};
+
 const handleDBErrors = (err: GlobalError) => {
 	if (err.name === 'CastError') {
-		handleCastErrorDB(err);
+		return handleCastErrorDB(err);
 	} else if (err.code === 11000) {
-		handleDuplicateFieldErrorDB(err);
+		return handleDuplicateFieldErrorDB(err);
 	} else if (err.name === 'ValidationError') {
-		handleValidationErrorDB(err);
+		return handleValidationErrorDB(err);
 	} else {
-		return new CustomError(err.message, StatusCodes.UNPROCESSABLE_ENTITY);
+		return null;
 	}
 };
 

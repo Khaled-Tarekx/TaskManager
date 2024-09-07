@@ -27,6 +27,7 @@ import {
 import { LinkExpired, NotResourceOwner } from '../../utills/errors/cause';
 import * as GlobalErrorMsg from '../../utills/errors/msg';
 import * as WorkspaceErrors from '../workspaces/errors/msg';
+
 export const createInviteLink = async (
 	req: TypedRequestBody<typeof createInviteSchema>,
 	res: Response,
@@ -45,18 +46,18 @@ export const createInviteLink = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof WorkspaceNotFound:
-				next(new NotFound(WorkspaceErrors.WorkspaceNotFound));
+				return next(new NotFound(WorkspaceErrors.WorkspaceNotFound));
 
 			case err instanceof WorkspaceOwnerNotFound:
-				next(new NotFound(ErrorMsg.OwnerNotAssigned));
+				return next(new NotFound(ErrorMsg.OwnerNotAssigned));
 			case err instanceof NotResourceOwner:
-				next(new Forbidden(ErrorMsg.NotOwnerOrAdmin));
+				return next(new Forbidden(ErrorMsg.NotOwnerOrAdmin));
 			case err instanceof InviteFailed:
-				next(new Conflict(ErrorMsg.InvitationFailed));
+				return next(new Conflict(ErrorMsg.InvitationFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -74,16 +75,16 @@ export const acceptInvitation = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof inviteLinkNotFound:
-				next(new NotFound(ErrorMsg.InviteLinkNotFound));
+				return next(new NotFound(ErrorMsg.InviteLinkNotFound));
 			case err instanceof LinkExpired:
-				next(new ResourceGone(ErrorMsg.InvitationExpired));
+				return next(new ResourceGone(ErrorMsg.InvitationExpired));
 
 			case err instanceof MemberCreationFailed:
-				next(new Conflict(ErrorMsg.MempershipFailed));
+				return next(new Conflict(ErrorMsg.MempershipFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };

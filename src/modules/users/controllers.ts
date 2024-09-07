@@ -20,8 +20,10 @@ import * as TaskErrorMsg from '../tasks/errors/msg';
 import { CommentNotFound } from '../comments/errors/cause';
 import { TaskNotFound } from '../tasks/errors/cause';
 
-export const getUsers = async (_req: Request, res: Response) => {
-	const users = await UserServices.getUsers();
+export const getUsers = async (req: Request, res: Response) => {
+	const user = req.user;
+	checkUser(user);
+	const users = await UserServices.getUsers(user);
 	res.status(StatusCodes.OK).json({ data: users, count: users.length });
 };
 
@@ -37,11 +39,11 @@ export const getUser = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof NotValidId:
-				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+				return next(new BadRequestError(GlobalErrorMsg.NotValidId));
 			case err instanceof UserNotFound:
-				next(new NotFound(AuthErrorMsg.UserNotFound));
+				return next(new NotFound(AuthErrorMsg.UserNotFound));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -64,11 +66,11 @@ export const updateUserInfo = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new NotFound(GlobalErrorMsg.LoginFirst));
+				return next(new NotFound(GlobalErrorMsg.LoginFirst));
 			case err instanceof UserUpdatingFailed:
-				next(new NotFound(ErrorMsg.UserUpdatingFailed));
+				return next(new NotFound(ErrorMsg.UserUpdatingFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -86,11 +88,11 @@ export const deleteUser = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new NotFound(GlobalErrorMsg.LoginFirst));
+				return next(new NotFound(GlobalErrorMsg.LoginFirst));
 			case err instanceof UserDeletionFailed:
-				next(new NotFound(ErrorMsg.UserDeletionFailed));
+				return next(new NotFound(ErrorMsg.UserDeletionFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -111,9 +113,9 @@ export const getUserReplies = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new NotFound(GlobalErrorMsg.LoginFirst));
+				return next(new NotFound(GlobalErrorMsg.LoginFirst));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -132,13 +134,13 @@ export const getUserReply = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new NotFound(GlobalErrorMsg.LoginFirst));
+				return next(new NotFound(GlobalErrorMsg.LoginFirst));
 			case err instanceof NotValidId:
-				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+				return next(new BadRequestError(GlobalErrorMsg.NotValidId));
 			case err instanceof ReplyNotFound:
-				next(new NotFound(ReplyErrorMsg.ReplyNotFound));
+				return next(new NotFound(ReplyErrorMsg.ReplyNotFound));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -159,9 +161,9 @@ export const getUserComments = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new NotFound(GlobalErrorMsg.LoginFirst));
+				return next(new NotFound(GlobalErrorMsg.LoginFirst));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -180,13 +182,13 @@ export const getUserComment = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new NotFound(GlobalErrorMsg.LoginFirst));
+				return next(new NotFound(GlobalErrorMsg.LoginFirst));
 			case err instanceof NotValidId:
-				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+				return next(new BadRequestError(GlobalErrorMsg.NotValidId));
 			case err instanceof CommentNotFound:
-				next(new NotFound(CommentErrorMsg.CommentNotFound));
+				return next(new NotFound(CommentErrorMsg.CommentNotFound));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -205,9 +207,9 @@ export const getUserTasks = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new NotFound(GlobalErrorMsg.LoginFirst));
+				return next(new NotFound(GlobalErrorMsg.LoginFirst));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -227,13 +229,13 @@ export const getUserTask = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new NotFound(GlobalErrorMsg.LoginFirst));
+				return next(new NotFound(GlobalErrorMsg.LoginFirst));
 			case err instanceof NotValidId:
-				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+				return next(new BadRequestError(GlobalErrorMsg.NotValidId));
 			case err instanceof TaskNotFound:
-				next(new NotFound(TaskErrorMsg.TaskNotFound));
+				return next(new NotFound(TaskErrorMsg.TaskNotFound));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };

@@ -46,11 +46,11 @@ export const getUserCommentLike = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof LikeNotFound:
-				next(new NotFound(ErrorMsg.LikeCreationFailed));
+				return next(new NotFound(ErrorMsg.LikeCreationFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -73,13 +73,13 @@ export const createCommentLike = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof LikeCountUpdateFailed:
-				next(new NotFound(ErrorMsg.ResourceLikeCountFailed));
+				return next(new NotFound(ErrorMsg.ResourceLikeCountFailed));
 			case err instanceof LikeCreationFailed:
-				next(new Conflict(ErrorMsg.LikeCreationFailed));
+				return next(new Conflict(ErrorMsg.LikeCreationFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -102,20 +102,20 @@ export const deleteCommentLike = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof LikeCountUpdateFailed:
-				next(new NotFound(ErrorMsg.ResourceLikeCountFailed));
+				return next(new NotFound(ErrorMsg.ResourceLikeCountFailed));
 			case err instanceof LikeCreationFailed:
-				next(new Conflict(ErrorMsg.LikeCreationFailed));
+				return next(new Conflict(ErrorMsg.LikeCreationFailed));
 			case err instanceof UnLikeFailed:
-				next(new Conflict(ErrorMsg.UnlikeFailed));
+				return next(new Conflict(ErrorMsg.UnlikeFailed));
 			case err instanceof NotValidId:
-				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+				return next(new BadRequestError(GlobalErrorMsg.NotValidId));
 			case err instanceof NotResourceOwner:
-				next(new AuthenticationError(GlobalErrorMsg.NotResourceOwner));
+				return next(new AuthenticationError(GlobalErrorMsg.NotResourceOwner));
 
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };

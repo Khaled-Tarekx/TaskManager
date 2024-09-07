@@ -4,9 +4,9 @@
   "description": "",
   "main": "main.ts",
   "scripts": {
-    "gen_types": "npx supabase gen types typescript --project-id amyvupfyuynqihnhdaaf > database.types.ts",
-    "dev": "nodemon --exec npm start",
-    "start": "tsc && resolve-tspaths && node ./dist/main.js"
+    "gen_types": "bunx supabase gen types typescript --project-id amyvupfyuynqihnhdaaf > database.types.ts",
+    "dev": "nodemon --exec bun start",
+    "start": "tsc  && resolve-tspaths && node ./dist/main.js"
   },
   "type": "module",
   "repository": {

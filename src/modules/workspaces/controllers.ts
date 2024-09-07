@@ -31,7 +31,6 @@ export const getWorkSpaces = async (_req: Request, res: Response) => {
 		.status(StatusCodes.OK)
 		.json({ data: workSpaces, count: workSpaces.length });
 };
-
 export const getMembersOfWorkSpace = async (
 	req: Request,
 	res: Response,
@@ -46,9 +45,9 @@ export const getMembersOfWorkSpace = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof NotValidId:
-				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+				return next(new BadRequestError(GlobalErrorMsg.NotValidId));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -75,13 +74,13 @@ export const createWorkSpace = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof MemberNotFound:
-				next(new NotFound(MemberErrorMsg.MemberNotFound));
+				return next(new NotFound(MemberErrorMsg.MemberNotFound));
 			case err instanceof WorkspaceCreationFailed:
-				next(new Conflict(ErrorMsg.WorkspaceCreationFailed));
+				return next(new Conflict(ErrorMsg.WorkspaceCreationFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -98,9 +97,9 @@ export const getWorkSpace = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof NotValidId:
-				next(new AuthenticationError(GlobalErrorMsg.NotValidId));
+				return next(new AuthenticationError(GlobalErrorMsg.NotValidId));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -128,17 +127,17 @@ export const updateWorkSpace = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof NotValidId:
-				next(new AuthenticationError(GlobalErrorMsg.NotValidId));
+				return next(new AuthenticationError(GlobalErrorMsg.NotValidId));
 			case err instanceof WorkspaceNotFound:
-				next(new NotFound(ErrorMsg.WorkspaceNotFound));
+				return next(new NotFound(ErrorMsg.WorkspaceNotFound));
 			case err instanceof MemberNotFound:
-				next(new NotFound(MemberErrorMsg.MemberNotFound));
+				return next(new NotFound(MemberErrorMsg.MemberNotFound));
 			case err instanceof NotResourceOwner:
-				next(new NotFound(GlobalErrorMsg.NotResourceOwner));
+				return next(new NotFound(GlobalErrorMsg.NotResourceOwner));
 			case err instanceof WorkspaceUpdatingFailed:
-				next(new Conflict(ErrorMsg.WorkspaceUpdatingFailed));
+				return next(new Conflict(ErrorMsg.WorkspaceUpdatingFailed));
 			default:
 				next(err);
 		}
@@ -162,19 +161,19 @@ export const deleteWorkSpace = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof NotValidId:
-				next(new AuthenticationError(GlobalErrorMsg.NotValidId));
+				return next(new AuthenticationError(GlobalErrorMsg.NotValidId));
 			case err instanceof WorkspaceNotFound:
-				next(new NotFound(ErrorMsg.WorkspaceNotFound));
+				return next(new NotFound(ErrorMsg.WorkspaceNotFound));
 			case err instanceof MemberNotFound:
-				next(new NotFound(MemberErrorMsg.MemberNotFound));
+				return next(new NotFound(MemberErrorMsg.MemberNotFound));
 			case err instanceof NotResourceOwner:
-				next(new NotFound(GlobalErrorMsg.NotResourceOwner));
+				return next(new NotFound(GlobalErrorMsg.NotResourceOwner));
 			case err instanceof WorkspaceDeletionFailed:
-				next(new Conflict(ErrorMsg.WorkspaceDeletionFailed));
+				return next(new Conflict(ErrorMsg.WorkspaceDeletionFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };

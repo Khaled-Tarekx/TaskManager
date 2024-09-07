@@ -1,33 +1,39 @@
 import express from 'express';
 import {
-	login,
 	refreshSession,
-	refreshToken,
-	register,
 	registerUser,
+	resetPassword,
 	signInUser,
 } from './controllers';
 import { validateResource } from './utillities';
-import { loginSchema, createUserSchema, tokenSchema } from './validation';
+import {
+	loginSchema,
+	createUserSchema,
+	resetPasswordSchema,
+	refreshTokenSchema,
+} from './validation';
 
 const router = express.Router();
 
-// router
-// 	.route('/register')
-// 	.post(validateResource({ bodySchema: createUserSchema }), register);
-// router
-// 	.route('/login')
-// 	.post(validateResource({ bodySchema: loginSchema }), login);
-// router
-// 	.route('/refresh-token')
-// 	.post(validateResource({ bodySchema: tokenSchema }), refreshToken);
-
-router
-	.route('/register-user')
-	.post(validateResource({ bodySchema: createUserSchema }), registerUser);
-router
-	.route('/login-user')
-	.post(validateResource({ bodySchema: loginSchema }), signInUser);
-router.route('/refresh-session').post(refreshSession);
+router.post(
+	'/register-user',
+	validateResource({ bodySchema: createUserSchema }),
+	registerUser
+);
+router.post(
+	'/login-user',
+	validateResource({ bodySchema: loginSchema }),
+	signInUser
+);
+router.post(
+	'/refresh-session',
+	validateResource({ bodySchema: refreshTokenSchema }),
+	refreshSession
+);
+router.patch(
+	'/reset-password',
+	validateResource({ bodySchema: resetPasswordSchema }),
+	resetPassword
+);
 
 export default router;

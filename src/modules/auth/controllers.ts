@@ -1,6 +1,12 @@
 import type { NextFunction, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { createUserSchema, loginSchema, tokenSchema } from './validation';
+import {
+	changePasswordSchema,
+	createUserSchema,
+	loginSchema,
+	resetPasswordSchema,
+	refreshTokenSchema,
+} from './validation';
 import type { TypedRequestBody } from 'zod-express-middleware';
 import * as AuthServices from './services';
 import {
@@ -14,96 +20,15 @@ import {
 } from './errors/cause';
 import {
 	AuthenticationError,
-	CustomError,
+	Conflict,
 	NotFound,
 } from '../../custom-errors/main';
 import * as ErrorMsg from './errors/msg';
+import * as UserErrorMsg from '.././users/errors/msg';
+
 import { supabase } from './supabase';
-export const register = async (
-	req: TypedRequestBody<typeof createUserSchema>,
-	res: Response,
-	next: NextFunction
-) => {
-	const { username, email, password, position } = req.body;
-	try {
-		const user = await AuthServices.createUser({
-			username,
-			email,
-			password,
-			position,
-		});
-		res.status(StatusCodes.CREATED).json({ data: user });
-	} catch (err: unknown) {
-		switch (true) {
-			case err instanceof RegistrationError:
-				next(new AuthenticationError(ErrorMsg.UserRegistraionFailed));
-			case err instanceof PasswordHashingError:
-				next(new AuthenticationError(ErrorMsg.IncorrectPassword));
-
-			default:
-				next(err);
-		}
-	}
-};
-
-export const login = async (
-	req: TypedRequestBody<typeof loginSchema>,
-	res: Response,
-	next: NextFunction
-) => {
-	const { email, password } = req.body;
-	try {
-		// const data = await AuthServices.login({
-		// 	email,
-		// 	password,
-		// });
-		const { data, error } = await supabase.auth.signInWithPassword({
-			email,
-			password,
-		});
-		if (error) {
-			return next(new AuthenticationError(error.message));
-		}
-		res.status(StatusCodes.OK).json(data);
-	} catch (err: unknown) {
-		switch (true) {
-			case err instanceof LoginError:
-				next(new AuthenticationError(ErrorMsg.LoginError));
-			case err instanceof UserNotFound:
-				next(new NotFound(ErrorMsg.UserNotFound));
-			case err instanceof TokenCreationFailed:
-				next(new AuthenticationError(ErrorMsg.TokenGenerationError));
-			default:
-				next(err);
-		}
-	}
-};
-
-export const refreshToken = async (
-	req: TypedRequestBody<typeof tokenSchema>,
-	res: Response,
-	next: NextFunction
-) => {
-	const { refreshToken } = req.body;
-	try {
-		const data = await AuthServices.token(refreshToken);
-
-		res.status(StatusCodes.CREATED).json(data);
-	} catch (err: unknown) {
-		switch (true) {
-			case err instanceof UserNotFound:
-				next(new NotFound(ErrorMsg.UserNotFound));
-			case err instanceof RefreshTokenNotFound:
-				next(new AuthenticationError(ErrorMsg.TokenNotFound));
-			case err instanceof TokenCreationFailed:
-				next(new AuthenticationError(ErrorMsg.TokenGenerationError));
-			case err instanceof TokenVerificationFailed:
-				next(new AuthenticationError(ErrorMsg.TokenVerificationFailed));
-			default:
-				next(err);
-		}
-	}
-};
+import { UserUpdatingFailed } from '../users/errors/cause';
+import { AuthError } from '@supabase/supabase-js';
 
 export const registerUser = async (
 	req: TypedRequestBody<typeof createUserSchema>,
@@ -123,8 +48,8 @@ export const registerUser = async (
 		switch (true) {
 			case err instanceof RegistrationError:
 				return next(new AuthenticationError(ErrorMsg.UserRegistraionFailed));
-			case err instanceof PasswordHashingError:
-				return next(new AuthenticationError(ErrorMsg.IncorrectPassword));
+			case err instanceof AuthError:
+				return next(new AuthenticationError(err.message));
 			default:
 				return next(err);
 		}
@@ -143,40 +68,72 @@ export const signInUser = async (
 		res.status(StatusCodes.OK).json(data);
 	} catch (err: unknown) {
 		switch (true) {
-			case err instanceof LoginError:
-				next(new AuthenticationError(ErrorMsg.LoginError));
-			case err instanceof UserNotFound:
-				next(new NotFound(ErrorMsg.UserNotFound));
-			case err instanceof TokenCreationFailed:
-				next(new AuthenticationError(ErrorMsg.TokenGenerationError));
+			case err instanceof AuthError:
+				return next(new NotFound(err.message));
+			case err instanceof UserUpdatingFailed:
+				return next(new Conflict(UserErrorMsg.UserUpdatingFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
 
 export const refreshSession = async (
-	req: TypedRequestBody<typeof tokenSchema>,
+	req: TypedRequestBody<typeof refreshTokenSchema>,
 	res: Response,
 	next: NextFunction
 ) => {
-	const { refreshToken } = req.body;
+	const { refresh_token } = req.body;
 	try {
-		const data = await AuthServices.refreshSession(refreshToken);
+		const data = await AuthServices.refreshSession({ refresh_token });
 
 		res.status(StatusCodes.CREATED).json(data);
 	} catch (err: unknown) {
 		switch (true) {
-			case err instanceof UserNotFound:
-				next(new NotFound(ErrorMsg.UserNotFound));
-			case err instanceof RefreshTokenNotFound:
-				next(new AuthenticationError(ErrorMsg.TokenNotFound));
-			case err instanceof TokenCreationFailed:
-				next(new AuthenticationError(ErrorMsg.TokenGenerationError));
-			case err instanceof TokenVerificationFailed:
-				next(new AuthenticationError(ErrorMsg.TokenVerificationFailed));
+			case err instanceof AuthError:
+				return next(new AuthenticationError(err.message));
 			default:
-				next(err);
+				return next(err);
+		}
+	}
+};
+
+export const resetPassword = async (
+	req: TypedRequestBody<typeof resetPasswordSchema>,
+	res: Response,
+	next: NextFunction
+) => {
+	const { email } = req.body;
+	try {
+		const data = await AuthServices.resetPassword({ email });
+
+		res.status(StatusCodes.CREATED).json(data);
+	} catch (err: unknown) {
+		switch (true) {
+			case err instanceof AuthError:
+				return next(new AuthenticationError(err.message));
+			default:
+				return next(err);
+		}
+	}
+};
+
+export const changePassword = async (
+	req: TypedRequestBody<typeof changePasswordSchema>,
+	res: Response,
+	next: NextFunction
+) => {
+	const { oldPassword, password } = req.body;
+	try {
+		const data = await AuthServices.changePassword({ oldPassword, password });
+
+		res.status(StatusCodes.CREATED).json(data);
+	} catch (err: unknown) {
+		switch (true) {
+			case err instanceof AuthError:
+				return next(new AuthenticationError(err.message));
+			default:
+				return next(err);
 		}
 	}
 };

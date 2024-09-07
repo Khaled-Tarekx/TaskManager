@@ -1,146 +1,37 @@
-import type { createUserDTO, loginDTO } from './types';
+import {
+	Roles,
+	changePasswordDTO,
+	type createUserDTO,
+	type loginDTO,
+	refreshSessionDTO,
+	resetpasswordDTO,
+} from './types';
 import User from '../users/models';
-import { checkResource, findResourceById } from '../../utills/helpers';
-import {
-	comparePassword,
-	createTokenFromUser,
-	hashPassword,
-} from './utillities';
-import {
-	LoginError,
-	RefreshTokenNotFound,
-	RegistrationError,
-	TokenCreationFailed,
-	TokenVerificationFailed,
-	UserNotFound,
-} from './errors/cause';
-import jwt, { JwtPayload } from 'jsonwebtoken';
-import UserRefreshToken from './models';
+import { checkResource } from '../../utills/helpers';
+import { RegistrationError } from './errors/cause';
 import { supabase } from './supabase';
-
-const saltRounds = process.env.SALT_ROUNTS;
-const access_secret = process.env.ACCESS_SECRET_KEY;
-const refresh_secret = process.env.REFRESH_SECRET_KEY;
-const access_expire = process.env.ACCESS_EXPIRE;
-const refresh_expire = process.env.REFRESH_EXPIRE;
-
-export const createUser = async (userData: createUserDTO) => {
-	const { username, email, password, position } = userData;
-	const hashedPassword = await hashPassword(password, saltRounds);
-
-	const user = await User.create({
-		username,
-		email,
-		password: hashedPassword,
-		position,
-	});
-	checkResource(user, RegistrationError);
-	return user;
-};
-
-export const login = async (loginData: loginDTO) => {
-	const { email, password } = loginData;
-	const user = await User.findOne({ email });
-	checkResource(user, UserNotFound);
-	const isCorrectPassword = await comparePassword(password, user.password);
-	if (!isCorrectPassword || !user) {
-		throw LoginError;
-	}
-	const updatedUser = await User.findOneAndUpdate(
-		{ email: user.email },
-		{ isLoggedIn: true },
-		{ new: true }
-	);
-	checkResource(updatedUser, UserNotFound);
-
-	const accessToken = await createTokenFromUser(
-		user,
-		access_secret,
-		access_expire
-	);
-	const refreshToken = await createTokenFromUser(
-		user,
-		refresh_secret,
-		refresh_expire
-	);
-
-	checkResource(accessToken, TokenCreationFailed);
-	checkResource(refreshToken, TokenCreationFailed);
-	await UserRefreshToken.create({
-		token: refreshToken,
-		user: user._id,
-	});
-	return { accessToken, refreshToken };
-};
-
-export const token = async (refresh_token: string) => {
-	if (!refresh_token) {
-		throw new RefreshTokenNotFound();
-	}
-	try {
-		const payload = jwt.verify(refresh_token, refresh_secret) as JwtPayload;
-		const user = await findResourceById(User, payload.id, UserNotFound);
-
-		const userRefreshToken = await UserRefreshToken.findOne({
-			token: refresh_secret,
-			user: user._id,
-		});
-
-		checkResource(userRefreshToken, RefreshTokenNotFound);
-
-		await UserRefreshToken.findByIdAndDelete(userRefreshToken._id);
-
-		const accessToken = await createTokenFromUser(
-			user,
-			access_secret,
-			access_expire
-		);
-		const newRefreshToken = await createTokenFromUser(
-			user,
-			refresh_secret,
-			refresh_expire
-		);
-
-		checkResource(accessToken, TokenCreationFailed);
-		checkResource(newRefreshToken, TokenCreationFailed);
-		const storedToken = await UserRefreshToken.create({
-			token: newRefreshToken,
-			user: user._id,
-		});
-		checkResource(storedToken, TokenCreationFailed);
-
-		return { accessToken, newRefreshToken };
-	} catch (err: unknown) {
-		if (
-			err instanceof jwt.TokenExpiredError ||
-			err instanceof jwt.JsonWebTokenError
-		)
-			throw new TokenVerificationFailed();
-	}
-};
+import { UserUpdatingFailed } from '../users/errors/cause';
+import { AuthError } from '@supabase/supabase-js';
 
 export const registerUser = async (userInput: createUserDTO) => {
 	const { username, email, password, position } = userInput;
-	const hashedPassword = await hashPassword(password, saltRounds);
-
 	const user = await User.create({
 		username,
 		email,
-		password: hashedPassword,
 		position,
 	});
-	const userData = { position, role: user.roles };
 	checkResource(user, RegistrationError);
 	const { data, error } = await supabase.auth.signUp({
 		email,
 		password,
-		options: { data: { userData } },
+		options: { data: { position, role: Roles.user, id: user._id } },
 	});
 
 	if (error) {
-		console.log(error.message);
-		throw new RegistrationError();
+		throw new AuthError(error.message);
 	}
+	console.log(data);
+	user.deleteOne({});
 
 	return data;
 };
@@ -153,32 +44,77 @@ export const loginUser = async (logininput: loginDTO) => {
 	});
 
 	if (error) {
-		throw new UserNotFound();
+		throw new AuthError(error.message);
 	}
 	const updatedUser = await User.findOneAndUpdate(
 		{ email: data.user.email },
 		{ isLoggedIn: true },
 		{ new: true }
 	);
-	checkResource(updatedUser, UserNotFound);
-
+	checkResource(updatedUser, UserUpdatingFailed);
 	const jwtToken = data.session.access_token;
 	const refreshToken = data.session.refresh_token;
 	const userData = {
 		email: data.user.email,
-		id: data.user.id,
+		supa_id: data.user.id,
+		id: updatedUser._id,
 	};
 	return { jwtToken, refreshToken, userData };
 };
 
-export const refreshSession = async (refresh_token: string) => {
+export const refreshSession = async (tokenInput: refreshSessionDTO) => {
+	const { refresh_token } = tokenInput;
 	const { data, error } = await supabase.auth.refreshSession({
 		refresh_token,
 	});
 
 	if (error) {
-		throw new TokenCreationFailed();
+		throw new AuthError(error.message);
 	}
 
+	return data;
+};
+
+export const resetPassword = async (resetPasswordInput: resetpasswordDTO) => {
+	const { email } = resetPasswordInput;
+
+	const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+	if (error) {
+		throw new AuthError(error.message);
+	}
+	return { message: 'check your email for a reset password link' };
+};
+
+export const changePassword = async (
+	changePasswordInput: changePasswordDTO
+) => {
+	const { oldPassword, password } = changePasswordInput;
+	const { error: sessionError } = await supabase.auth.getSession();
+	if (sessionError) throw new AuthError(sessionError.message);
+	const {
+		data: { user },
+		error: getUserError,
+	} = await supabase.auth.getUser();
+	if (getUserError) throw new AuthError(getUserError.message);
+	if (!user || !user.email)
+		throw new AuthError('User not found or email not available');
+
+	const { error: signInError } = await supabase.auth.signInWithPassword({
+		email: user.email,
+		password: oldPassword,
+	});
+
+	if (signInError) {
+		throw new AuthError(signInError.message);
+	}
+
+	const { data, error: updateError } = await supabase.auth.updateUser({
+		password,
+	});
+
+	if (updateError) {
+		throw new AuthError(updateError.message);
+	}
 	return data;
 };

@@ -13,6 +13,8 @@ import {
 	getUserTask,
 } from './controllers';
 import { updateUserSchema } from './validations';
+import { changePasswordSchema } from '../auth/validation';
+import { changePassword } from '../auth/controllers';
 
 const router = express.Router();
 
@@ -27,10 +29,16 @@ router.route('/comments/me').get(getUserComments);
 
 router.get('/:userId', getUser);
 
-router.patch(
+router.put(
 	'/update-user',
 	validateResource({ bodySchema: updateUserSchema }),
 	updateUserInfo
+);
+
+router.patch(
+	'/change-password',
+	validateResource({ bodySchema: changePasswordSchema }),
+	changePassword
 );
 
 router.delete('/delete-user', deleteUser);

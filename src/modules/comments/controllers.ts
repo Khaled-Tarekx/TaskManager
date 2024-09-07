@@ -39,9 +39,9 @@ export const getTaskComments = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof NotValidId:
-				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+				return next(new BadRequestError(GlobalErrorMsg.NotValidId));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -58,11 +58,11 @@ export const getComment = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof NotValidId:
-				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+				return next(new BadRequestError(GlobalErrorMsg.NotValidId));
 			case err instanceof CommentNotFound:
-				next(new NotFound(ErrorMsg.CommentNotFound));
+				return next(new NotFound(ErrorMsg.CommentNotFound));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -84,15 +84,15 @@ export const createComment = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof CommentCreationFailed:
-				next(new Conflict(ErrorMsg.CommentCreationFailed));
+				return next(new Conflict(ErrorMsg.CommentCreationFailed));
 
 			case err instanceof CommentCountUpdateFailed:
-				next(new Conflict(ErrorMsg.CommentCountFailed));
+				return next(new Conflict(ErrorMsg.CommentCountFailed));
 
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -117,16 +117,16 @@ export const editComment = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof NotValidId:
-				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+				return next(new BadRequestError(GlobalErrorMsg.NotValidId));
 			case err instanceof CommentNotFound:
-				next(new NotFound(ErrorMsg.CommentNotFound));
+				return next(new NotFound(ErrorMsg.CommentNotFound));
 
 			case err instanceof CommentUpdateFailed:
-				next(new Conflict(ErrorMsg.CommentEditingFailed));
+				return next(new Conflict(ErrorMsg.CommentEditingFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
@@ -149,19 +149,19 @@ export const deleteComment = async (
 	} catch (err: unknown) {
 		switch (true) {
 			case err instanceof UserNotFound:
-				next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
+				return next(new AuthenticationError(GlobalErrorMsg.LoginFirst));
 			case err instanceof NotValidId:
-				next(new BadRequestError(GlobalErrorMsg.NotValidId));
+				return next(new BadRequestError(GlobalErrorMsg.NotValidId));
 			case err instanceof CommentNotFound:
-				next(new NotFound(ErrorMsg.CommentNotFound));
+				return next(new NotFound(ErrorMsg.CommentNotFound));
 
 			case err instanceof CommentCountUpdateFailed:
-				next(new Conflict(ErrorMsg.CommentCountFailed));
+				return next(new Conflict(ErrorMsg.CommentCountFailed));
 
 			case err instanceof CommentDeletionFailed:
-				next(new Conflict(ErrorMsg.CommentDeletionFailed));
+				return next(new Conflict(ErrorMsg.CommentDeletionFailed));
 			default:
-				next(err);
+				return next(err);
 		}
 	}
 };
