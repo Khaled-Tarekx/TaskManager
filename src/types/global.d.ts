@@ -6,9 +6,6 @@ declare global {
 			PORT: string;
 			SALT_ROUNTS: string;
 			ACCESS_SECRET_KEY: string;
-			REFRESH_SECRET_KEY: string;
-			ACCESS_EXPIRE: string;
-			REFRESH_EXPIRE: string;
 			ADMIN_EMAIL: string;
 			ADMIN_PASSWORD: string;
 			ADMIN_USERNAME: string;

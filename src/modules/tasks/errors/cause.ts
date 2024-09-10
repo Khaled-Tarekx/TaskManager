@@ -38,16 +38,16 @@ class TaskMarkedCompleted extends Error {
 	}
 }
 
-class CompleteTaskDependenciesFirst extends Error {
+class CompleteSubTasksFirst extends Error {
 	constructor() {
-		super(`dependant tasks must be completed first`);
-		this.name = 'CompleteTaskDependenciesFirst';
+		super(`subtasks must be completed first`);
+		this.name = 'CompleteSubTasksFirst';
 	}
 }
 class AssigneeNotFound extends Error {
 	constructor() {
 		super(
-			`task must be assigned to a user first before` +
+			`task must be assigned to a workspace member/members first before` +
 				` marking it as completed`
 		);
 		this.name = 'AssigneeNotFound';
@@ -61,6 +61,6 @@ export {
 	TaskCreationFailed,
 	MailFailedToSend,
 	TaskMarkedCompleted,
-	CompleteTaskDependenciesFirst,
+	CompleteSubTasksFirst,
 	AssigneeNotFound,
 };

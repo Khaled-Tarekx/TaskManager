@@ -6,7 +6,7 @@ const TaskDeletionFailed = 'task deletion failed';
 const AssigneeNotFound =
 	`task must be assigned to a user first before` + ` marking it as completed`;
 const MailFailedToSend = 'mailing proccess wasnt successfull';
-const CompleteTaskDependenciesFirst = `dependant tasks must be completed first`;
+const CompleteSubTasksFirst = `subtasks must be completed first`;
 const TaskAlreadyMarked = 'task already marked as completed before';
 export {
 	TaskNotFound,
@@ -16,6 +16,6 @@ export {
 	TaskDeletionFailed,
 	MailFailedToSend,
 	AssigneeNotFound,
-	CompleteTaskDependenciesFirst,
+	CompleteSubTasksFirst,
 	TaskAlreadyMarked,
 };

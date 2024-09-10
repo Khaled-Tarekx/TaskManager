@@ -1,5 +1,5 @@
 import express from 'express';
-import { validateResource } from '../auth/utillities';
+import { validateResource } from '../../utills/middlewares';
 import {
 	getUsers,
 	getUser,

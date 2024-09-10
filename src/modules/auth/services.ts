@@ -8,7 +8,7 @@ import {
 } from './types';
 import User from '../users/models';
 import { checkResource } from '../../utills/helpers';
-import { RegistrationError } from './errors/cause';
+import { UserNotFound } from './errors/cause';
 import { supabase } from './supabase';
 import { UserUpdatingFailed } from '../users/errors/cause';
 import { AuthError } from '@supabase/supabase-js';
@@ -20,18 +20,20 @@ export const registerUser = async (userInput: createUserDTO) => {
 		email,
 		position,
 	});
-	checkResource(user, RegistrationError);
+
 	const { data, error } = await supabase.auth.signUp({
 		email,
 		password,
 		options: { data: { position, role: Roles.user, id: user._id } },
 	});
 
-	if (error) {
+	if (
+		(error && error.name === 'AuthApiError') ||
+		(error && error.name === 'AuthRetryableFetchError')
+	) {
+		await user.deleteOne();
 		throw new AuthError(error.message);
 	}
-	console.log(data);
-	user.deleteOne({});
 
 	return data;
 };
@@ -77,13 +79,25 @@ export const refreshSession = async (tokenInput: refreshSessionDTO) => {
 
 export const resetPassword = async (resetPasswordInput: resetpasswordDTO) => {
 	const { email } = resetPasswordInput;
+	const { data: userList, error: userError } =
+		await supabase.auth.admin.listUsers();
 
-	const { error } = await supabase.auth.resetPasswordForEmail(email);
+	if (userError) {
+		throw new AuthError(userError.message);
+	}
+
+	const user = userList.users.find((user) => user.email === email);
+
+	if (!user) {
+		throw new UserNotFound();
+	}
+
+	const { data, error } = await supabase.auth.resetPasswordForEmail(email);
 
 	if (error) {
 		throw new AuthError(error.message);
 	}
-	return { message: 'check your email for a reset password link' };
+	return data;
 };
 
 export const changePassword = async (

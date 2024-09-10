@@ -1,7 +1,6 @@
-import User from '../users/models';
+import User, { UserSchema } from '../users/models';
 import moment from 'moment';
 import { TaskSchema } from './models';
-import { BadRequestError } from '../../custom-errors/main';
 import emailQueue from './queue';
 import { findResourceById } from '../../utills/helpers';
 import { Member } from '../workspaces/models';
@@ -11,7 +10,7 @@ import { MailFailedToSend } from './errors/cause';
 
 export const notifyUserOfUpcomingDeadline = async (task: TaskSchema) => {
 	const currentTime = moment(new Date());
-	const deadLine = moment(new Date(task.dead_line));
+	const deadLine = moment(new Date(task.deadline));
 	const daysUntilDeadline = deadLine.diff(currentTime, 'days');
 
 	if (daysUntilDeadline === 0) {
@@ -35,25 +34,46 @@ export const notifyUserOfUpcomingDeadline = async (task: TaskSchema) => {
 	}
 };
 
+const sendEmails = async (
+	users: UserSchema[],
+	subject: string,
+	message: string
+) => {
+	const currentDate = moment(new Date()).format('DD MM YYYY hh:mm:ss');
+
+	const emailPromises = users.map((user) =>
+		emailQueue.add({
+			to: user.email,
+			subject: subject,
+			text: message,
+			date: currentDate,
+		})
+	);
+
+	await Promise.all(emailPromises);
+};
 export const sendNotification = async (message: string, task: TaskSchema) => {
 	try {
-		const member = await findResourceById(
-			Member,
-			task.assignee.id,
-			MemberNotFound
+		const assignees = await Promise.all(
+			task.assignees.map(async (assignee) => {
+				const member = findResourceById(Member, assignee._id, MemberNotFound);
+				return member;
+			})
 		);
-		const user = await findResourceById(User, member.user.id, UserNotFound);
 
-		await emailQueue.add({
-			to: `${user.email}`,
-			subject: 'reminder: task_deadline',
-			text: message,
-			date: moment(new Date()).format('DD MM YYYY hh:mm:ss'),
-		});
+		const users = await Promise.all(
+			assignees.map(async (assignee) => {
+				const user = findResourceById(User, assignee.user._id, UserNotFound);
+				return user;
+			})
+		);
+		const subject = 'reminder: task_deadline';
+		sendEmails(users, subject, message);
 	} catch (err: unknown) {
 		return new MailFailedToSend();
 	}
 };
+
 emailQueue.on('completed', (job) => {
 	console.log(`Email job with id ${job.id} has been completed`);
 });
@@ -63,3 +83,10 @@ emailQueue.on('failed', (job, err) => {
 		`Email job with id ${job.id} has failed with error ${err.message}`
 	);
 });
+
+export const getAssignees = async (assigneesId: String[]) => {
+	if (!Array.isArray(assigneesId) || assigneesId.length === 0) {
+		return [];
+	}
+	return assigneesId;
+};

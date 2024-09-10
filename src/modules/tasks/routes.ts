@@ -9,7 +9,7 @@ import {
 	markCompleted,
 } from './controllers';
 import uploads from '../../setup/upload';
-import { validateResource } from '../auth/utillities';
+import { validateResource } from '../../utills/middlewares';
 import { createTaskSchema, updateTaskSchema } from './validation';
 
 const router = Router();

@@ -5,7 +5,7 @@ import {
 	resetPassword,
 	signInUser,
 } from './controllers';
-import { validateResource } from './utillities';
+import { validateResource } from '../../utills/middlewares';
 import {
 	loginSchema,
 	createUserSchema,

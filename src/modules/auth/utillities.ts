@@ -1,8 +1,6 @@
 import User, { UserSchema } from '../users/models';
 import jwt from 'jsonwebtoken';
-import { CustomError } from '../../custom-errors/main';
-import { type AnyZodObject, ZodError } from 'zod';
-import type { NextFunction, Request, Response } from 'express';
+
 import { compare, hash } from 'bcrypt';
 import type { InferRawDocType } from 'mongoose';
 import {
@@ -25,47 +23,6 @@ export const createTokenFromUser = async (
 	return jwt.sign({ id: tokenUser._id, roles: tokenUser.roles }, secret, {
 		expiresIn: expires,
 	});
-};
-
-type zodSchema = {
-	bodySchema?: AnyZodObject;
-	querySchema?: AnyZodObject;
-	paramsSchema?: AnyZodObject;
-};
-
-export const validateResource = ({
-	bodySchema,
-	querySchema,
-	paramsSchema,
-}: zodSchema) => {
-	return async (
-		req: Request,
-		_res: Response,
-		next: NextFunction
-	): Promise<void> => {
-		try {
-			if (bodySchema) {
-				await bodySchema.parseAsync(req.body);
-			}
-			if (querySchema) {
-				await querySchema.parseAsync(req.query);
-			}
-			if (paramsSchema) {
-				await paramsSchema.parseAsync(req.params);
-			}
-			next();
-		} catch (err: any) {
-			if (err instanceof ZodError) {
-				const errorMessages = err.issues.map((issue) => [
-					issue.path,
-					issue.message,
-				]);
-				return next(new CustomError(errorMessages.join(', '), 422));
-			} else {
-				return next(new CustomError(err.message, 422));
-			}
-		}
-	};
 };
 
 export const comparePassword = async (
@@ -91,3 +48,49 @@ export const hashPassword = async (
 	}
 	return hash(normalPassword, Number(saltRounds));
 };
+
+// export const sendCustomEmail = async (
+// 	toEmail: string,
+// 	subject: string,
+// 	message: string
+// ) => {
+// 	try {
+// 		return emailQueue.add({
+// 			from: `<"${process.env.ADMIN_USERNAME}">, <"${process.env.ADMIN_EMAIL}">`,
+// 			to: toEmail,
+// 			subject,
+// 			text: message,
+// 			date: moment(new Date()).format('DD MM YYYY hh:mm:ss'),
+// 		});
+// 	} catch (err: unknown) {
+// 		return new MailFailedToSend();
+// 	}
+// };
+/* 
+supabase.auth.onAuthStateChange(async (event, session) => {
+	switch (event) {
+		case 'SIGNED_IN':
+			if (session?.user?.email) {
+				await sendCustomEmail(
+					session.user.email,
+					'Welcome to Our App!',
+					'<h1>Welcome!</h1><p>Thanks for signing up.</p>'
+				);
+			}
+			break;
+		case 'PASSWORD_RECOVERY':
+			if (session?.user?.email) {
+				const resetLink = `http://localhost:7500/reset-password?token=${session.access_token}`;
+				console.log(session.access_token);
+
+				console.log(session.user.email);
+				await sendCustomEmail(
+					session.user.email,
+					'Password Reset Request',
+					`<h1>Password Reset</h1><p>Click <a href="${resetLink}">here</a> to reset your password.</p>`
+				);
+			}
+			break;
+	}
+});
+ */

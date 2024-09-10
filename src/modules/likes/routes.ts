@@ -14,7 +14,7 @@ import {
 	deleteReplyLike,
 } from './reply.controllers';
 import { createCommentLikeSchema, createReplyLikeSchema } from './validation';
-import { validateResource } from '../auth/utillities';
+import { validateResource } from '../../utills/middlewares';
 
 const router = Router();
 router.get('/comments/:commentId', getCommentLikes);

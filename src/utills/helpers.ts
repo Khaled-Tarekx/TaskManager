@@ -93,10 +93,10 @@ export const isResourceOwner = async (
 };
 
 export const compareMembersWorkspace = async (
-	member: Types.ObjectId,
-	memberToCompare: Types.ObjectId
+	assigneeWorkspace: Types.ObjectId,
+	creatorWorkspacee: Types.ObjectId
 ): Promise<Boolean> => {
-	const isSameWorkspace = member || memberToCompare;
+	const isSameWorkspace = assigneeWorkspace === creatorWorkspacee;
 	if (!isSameWorkspace) {
 		throw new WorkspaceMismatch();
 	}

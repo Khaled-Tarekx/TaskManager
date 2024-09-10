@@ -6,7 +6,7 @@ import {
 	editComment,
 	deleteComment,
 } from './controllers';
-import { validateResource } from '../auth/utillities';
+import { validateResource } from '../../utills/middlewares';
 import { createCommentSchema, updateCommentSchema } from './validation';
 
 const router = Router();

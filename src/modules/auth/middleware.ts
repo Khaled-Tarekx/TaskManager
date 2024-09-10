@@ -25,7 +25,7 @@ export const authMiddleware = async (
 ) => {
 	const authHeader = req.headers.authorization;
 	if (!authHeader || !authHeader.startsWith('Bearer ')) {
-		throw new UnAuthorized();
+		return next(new UnAuthorized());
 	}
 	let decoded: SupaAuth;
 	const token = authHeader.split(' ')[1];
@@ -38,17 +38,22 @@ export const authMiddleware = async (
 	if (!decoded) {
 		return next(new TokenVerificationFailed());
 	}
-	const user = await findResourceById(
-		UserModel,
-		decoded.user_metadata.id,
-		UserNotFound
-	);
+	try {
+		const user = await findResourceById(
+			UserModel,
+			decoded.user_metadata.id,
+			UserNotFound
+		);
 
-	req.user = {
-		...user.toObject(),
-		id: user._id.toString(),
-		supaId: decoded.sub,
-	};
-
+		req.user = {
+			...user.toObject(),
+			id: user._id.toString(),
+			supaId: decoded.sub,
+		};
+	} catch (err) {
+		if (err instanceof UserNotFound) {
+			return next(new UserNotFound());
+		}
+	}
 	next();
 };

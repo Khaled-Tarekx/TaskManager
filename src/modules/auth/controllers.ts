@@ -9,15 +9,7 @@ import {
 } from './validation';
 import type { TypedRequestBody } from 'zod-express-middleware';
 import * as AuthServices from './services';
-import {
-	LoginError,
-	PasswordHashingError,
-	RefreshTokenNotFound,
-	RegistrationError,
-	TokenCreationFailed,
-	TokenVerificationFailed,
-	UserNotFound,
-} from './errors/cause';
+import { RegistrationError, UserNotFound } from './errors/cause';
 import {
 	AuthenticationError,
 	Conflict,
@@ -26,7 +18,6 @@ import {
 import * as ErrorMsg from './errors/msg';
 import * as UserErrorMsg from '.././users/errors/msg';
 
-import { supabase } from './supabase';
 import { UserUpdatingFailed } from '../users/errors/cause';
 import { AuthError } from '@supabase/supabase-js';
 
@@ -112,6 +103,8 @@ export const resetPassword = async (
 		switch (true) {
 			case err instanceof AuthError:
 				return next(new AuthenticationError(err.message));
+			case err instanceof UserNotFound:
+				return next(new NotFound(err.message));
 			default:
 				return next(err);
 		}

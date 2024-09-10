@@ -14,7 +14,7 @@ class RegistrationError extends Error {
 }
 class UserNotFound extends Error {
 	constructor() {
-		super('couldnt find user with the given email or password');
+		super('couldnt find user with the given input');
 		this.name = 'UserNotFound';
 	}
 }
@@ -44,6 +44,7 @@ class UnAuthorized extends Error {
 		this.name = 'UnAuthorized';
 	}
 }
+
 export {
 	LoginError,
 	UserNotFound,

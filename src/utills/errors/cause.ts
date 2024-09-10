@@ -22,4 +22,12 @@ class LinkExpired extends Error {
 		this.name = 'LinkExpired';
 	}
 }
-export { NotResourceOwner, NotValidId, WorkspaceMismatch, LinkExpired };
+class ValidationError extends Error {}
+
+export {
+	NotResourceOwner,
+	NotValidId,
+	WorkspaceMismatch,
+	LinkExpired,
+	ValidationError,
+};

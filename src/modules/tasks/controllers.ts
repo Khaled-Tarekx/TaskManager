@@ -1,9 +1,13 @@
 import type { NextFunction, Request, Response } from 'express';
 import Task from './models';
 import { StatusCodes } from 'http-status-codes';
-import { checkUser, validateObjectIds } from '../../utills/helpers';
+import { checkUser } from '../../utills/helpers';
 import { type TypedRequestBody } from 'zod-express-middleware';
-import { createTaskSchema, updateTaskSchema } from './validation';
+import {
+	createTaskSchema,
+	updateTaskSchema,
+	assignTaskSchema,
+} from './validation';
 
 import * as TaskServices from './services';
 import {
@@ -14,7 +18,7 @@ import {
 	TaskUpdatingFailed,
 	MailFailedToSend,
 	AssigneeNotFound,
-	CompleteTaskDependenciesFirst,
+	CompleteSubTasksFirst,
 } from './errors/cause';
 import {
 	AuthenticationError,
@@ -27,11 +31,7 @@ import * as GlobalErrorMsg from '../../utills/errors/msg';
 import { UserNotFound } from '../auth/errors/cause';
 
 import { MemberNotFound } from '../workspaces/members/errors/cause';
-import {
-	NotResourceOwner,
-	NotValidId,
-	WorkspaceMismatch,
-} from '../../utills/errors/cause';
+import { NotResourceOwner, NotValidId } from '../../utills/errors/cause';
 
 export const getTasks = async (_req: Request, res: Response) => {
 	const tasks = await TaskServices.getTasks();
@@ -70,23 +70,25 @@ export const createTask = async (
 		checkUser(user);
 		const attachment = req.file;
 		const {
-			dead_line,
-			dependants,
+			deadline,
+			subtasks,
 			priority,
-			skill_set,
+			tags,
 			status,
-			assigneeId,
+			assigneesId,
 			workspaceId,
+			customFields,
 		} = req.body;
 		const task = await TaskServices.createTask(
 			{
-				dead_line,
-				dependants,
+				deadline,
+				subtasks,
 				priority,
-				skill_set,
+				tags,
 				status,
-				assigneeId,
+				assigneesId,
 				workspaceId,
+				customFields,
 			},
 			user,
 			attachment
@@ -114,7 +116,15 @@ export const updateTask = async (
 	res: Response,
 	next: NextFunction
 ) => {
-	const { priority, skill_set, dead_line } = req.body;
+	const {
+		priority,
+		tags,
+		deadline,
+		customFields,
+		assignees,
+		status,
+		subtasks,
+	} = req.body;
 	const { taskId } = req.params;
 	try {
 		const user = req.user;
@@ -123,9 +133,13 @@ export const updateTask = async (
 
 		const updatedTask = await TaskServices.updateTask(
 			{
-				dead_line,
 				priority,
-				skill_set,
+				tags,
+				deadline,
+				customFields,
+				assignees,
+				status,
+				subtasks,
 			},
 			taskId,
 			user,
@@ -174,7 +188,6 @@ export const deleteTask = async (
 				return next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
 			case err instanceof NotResourceOwner:
 				return next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
-
 			case err instanceof TaskDeletionFailed:
 				return next(new Conflict(ErrorMsg.TaskDeletionFailed));
 			default:
@@ -184,17 +197,18 @@ export const deleteTask = async (
 };
 
 export const assignTask = async (
-	req: Request,
+	req: TypedRequestBody<typeof assignTaskSchema>,
 	res: Response,
 	next: NextFunction
 ) => {
-	const { taskId, assigneeId } = req.params;
+	const { taskId } = req.params;
+	const { assigneesId } = req.body;
 	const user = req.user;
 	try {
 		checkUser(user);
-		validateObjectIds([taskId, assigneeId]);
 		const assignedTask = await TaskServices.assignTask(
-			{ taskId, assigneeId },
+			taskId,
+			{ assigneesId },
 			user
 		);
 
@@ -213,8 +227,6 @@ export const assignTask = async (
 				return next(new NotFound(ErrorMsg.AssigneeOrCreatorNotFound));
 			case err instanceof NotResourceOwner:
 				return next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
-			case err instanceof WorkspaceMismatch:
-				return next(new Conflict(GlobalErrorMsg.WorkspaceMismatch));
 			case err instanceof TaskUpdatingFailed:
 				return next(new Conflict(ErrorMsg.TaskUpdatingFailed));
 			case err instanceof MailFailedToSend:
@@ -250,8 +262,8 @@ export const markCompleted = async (
 				return next(new Forbidden(GlobalErrorMsg.NotResourceOwner));
 			case err instanceof AssigneeNotFound:
 				return next(new NotFound(ErrorMsg.AssigneeNotFound));
-			case err instanceof CompleteTaskDependenciesFirst:
-				return next(new Conflict(ErrorMsg.CompleteTaskDependenciesFirst));
+			case err instanceof CompleteSubTasksFirst:
+				return next(new Conflict(ErrorMsg.CompleteSubTasksFirst));
 			case err instanceof TaskMarkedCompleted:
 				return next(new Conflict(ErrorMsg.TaskAlreadyMarked));
 			case err instanceof TaskUpdatingFailed:
