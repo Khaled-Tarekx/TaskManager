@@ -15,6 +15,7 @@ import {
 	WorkspaceNotFound,
 	WorkspaceUpdatingFailed,
 } from './errors/cause';
+import Task from '../tasks/models';
 
 export const getWorkSpaces = async () => {
 	return WorkSpace.find({});
@@ -105,8 +106,10 @@ export const deleteWorkSpace = async (
 		MemberNotFound
 	);
 	await isResourceOwner(user.id, workspaceOwner.user._id);
-	await WorkSpace.findByIdAndDelete(workspace._id);
-	if (!workspace) {
+	await Task.deleteMany({ workspace: workspace._id });
+	await Member.deleteMany({ workspace: workspace._id });
+	const deletedWorkspace = await workspace.deleteOne();
+	if (deletedWorkspace.deletedCount === 0) {
 		throw new WorkspaceDeletionFailed();
 	}
 

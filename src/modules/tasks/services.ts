@@ -1,6 +1,10 @@
 import Task from './models';
 
-import { getAssignees, notifyUserOfUpcomingDeadline } from './utills';
+import {
+	deleteSubtasksOfTask,
+	getAssignees,
+	notifyUserOfUpcomingDeadline,
+} from './utills';
 import {
 	checkResource,
 	findResourceById,
@@ -14,7 +18,7 @@ import {
 	type createTaskDTO,
 	type updateTaskDTO,
 } from './types';
-import { Member } from '../workspaces/models';
+import { Member, WorkSpace } from '../workspaces/models';
 import {
 	TaskNotFound,
 	TaskCreationFailed,
@@ -25,6 +29,7 @@ import {
 	CompleteSubTasksFirst,
 } from './errors/cause';
 import { MemberNotFound } from '../workspaces/members/errors/cause';
+import { Comment } from '../comments/models';
 
 export const getTasks = async () => {
 	return Task.find({});
@@ -143,12 +148,22 @@ export const deleteTask = async (user: Express.User, taskId: string) => {
 
 	await isResourceOwner(user.id, creator.user._id);
 
-	const deletedTask = await Task.findByIdAndDelete(task.id);
-	if (!deletedTask) {
+	await deleteSubtasksOfTask(task._id);
+
+	await WorkSpace.findByIdAndUpdate(task.workspace._id, {
+		$pull: { tasks: task._id },
+	});
+
+	await Comment.deleteMany({ task: task._id });
+	const deletedTask = await task.deleteOne();
+
+	if (deletedTask.deletedCount === 0) {
 		throw new TaskDeletionFailed();
 	}
+
 	return task;
 };
+
 export const assignTask = async (
 	taskId: string,
 	assigneesInput: assignTaskDTO,

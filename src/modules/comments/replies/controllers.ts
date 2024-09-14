@@ -23,14 +23,17 @@ import { UserNotFound } from '../../auth/errors/cause';
 import * as GlobalErrorMsg from '../../../utills/errors/msg';
 import { NotValidId } from '../../../utills/errors/cause';
 
-export const getReplies = async (_req: Request, res: Response) => {
-	const replies = await ReplyServices.getReplies();
+export const getReplies = async (
+	req: Request<{}, {}, {}, Record<string, string>>,
+	res: Response
+) => {
+	const replies = await ReplyServices.getReplies(req.query);
 
 	res.status(StatusCodes.OK).json({ data: replies, count: replies.length });
 };
 
 export const getCommentReplies = async (
-	req: Request,
+	req: Request<{}, {}, {}, Record<string, string>>,
 	res: Response,
 	next: NextFunction
 ) => {

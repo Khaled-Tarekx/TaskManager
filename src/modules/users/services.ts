@@ -15,6 +15,7 @@ import { UserDeletionFailed, UserUpdatingFailed } from './errors/cause';
 import { UserNotFound } from '../auth/errors/cause';
 import { supabase } from '../auth/supabase';
 import { User } from '@supabase/supabase-js';
+import { Member } from '../workspaces/models';
 
 export const getUsers = async (user: Express.User) => {
 	return UserModel.find({}).select(' -password');
@@ -50,16 +51,16 @@ export const deleteUser = async (user: Express.User) => {
 	checkResource(userToDelete, UserNotFound);
 
 	await supabase.auth.admin.deleteUser(user.supaId!);
-	const deletedUser = await UserModel.findByIdAndDelete(userToDelete.id);
-	if (!deletedUser) {
+	await Member.deleteOne({ user: user.id });
+
+	const deletedUser = await userToDelete.deleteOne();
+	if (deletedUser.deletedCount === 0) {
 		throw new UserDeletionFailed();
 	}
-	return deletedUser;
+	return userToDelete;
 };
 
 export const getUserReplies = async (user: Express.User) => {
-	console.log(user);
-	console.log(user.id);
 	return Reply.find({
 		owner: user.id,
 	});

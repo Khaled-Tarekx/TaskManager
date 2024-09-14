@@ -1,12 +1,13 @@
 import User, { UserSchema } from '../users/models';
 import moment from 'moment';
-import { TaskSchema } from './models';
+import Task, { TaskSchema } from './models';
 import emailQueue from './queue';
 import { findResourceById } from '../../utills/helpers';
 import { Member } from '../workspaces/models';
 import { MemberNotFound } from '../workspaces/members/errors/cause';
 import { UserNotFound } from '../auth/errors/cause';
 import { MailFailedToSend } from './errors/cause';
+import { Types } from 'mongoose';
 
 export const notifyUserOfUpcomingDeadline = async (task: TaskSchema) => {
 	const currentTime = moment(new Date());
@@ -89,4 +90,12 @@ export const getAssignees = async (assigneesId: String[]) => {
 		return [];
 	}
 	return assigneesId;
+};
+
+export const deleteSubtasksOfTask = async (parentTaskId: Types.ObjectId) => {
+	const subtasks = await Task.find({ parentTask: parentTaskId });
+	for (const subtask of subtasks) {
+		await deleteSubtasksOfTask(subtask._id);
+		await subtask.deleteOne();
+	}
 };

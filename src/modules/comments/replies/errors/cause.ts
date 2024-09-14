@@ -28,11 +28,19 @@ class ReplyDeletionFailed extends Error {
 		this.name = 'ReplyDeletionFailed';
 	}
 }
-
+class NotSameCommentOrNotFound extends Error {
+	constructor() {
+		super(
+			'parent not found or parent and child replies are either not from the same comment'
+		);
+		this.name = 'NotSameCommentOrNotFound';
+	}
+}
 export {
 	ReplyNotFound,
 	ReplyCreationFailed,
 	ReplyUpdateFailed,
 	ReplyCountUpdateFailed,
 	ReplyDeletionFailed,
+	NotSameCommentOrNotFound,
 };
