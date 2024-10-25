@@ -9,15 +9,13 @@ import { BadRequestError, NotFound } from '../../custom-errors/main';
 import { NotValidId } from '../../utills/errors/cause';
 import { UserNotFound } from '../auth/errors/cause';
 import { UserDeletionFailed, UserUpdatingFailed } from './errors/cause';
-import { ReplyNotFound } from '../comments/replies/errors/cause';
 import * as GlobalErrorMsg from '../../utills/errors/msg';
 import * as ErrorMsg from './errors/msg';
 import * as AuthErrorMsg from '../auth/errors/msg';
 
-import * as ReplyErrorMsg from '../comments/replies/errors/msg';
+import { CommentNotFound, ReplyNotFound } from '../comments/errors/cause';
 import * as CommentErrorMsg from '../comments/errors/msg';
 import * as TaskErrorMsg from '../tasks/errors/msg';
-import { CommentNotFound } from '../comments/errors/cause';
 import { TaskNotFound } from '../tasks/errors/cause';
 
 export const getUsers = async (req: Request, res: Response) => {
@@ -138,7 +136,7 @@ export const getUserReply = async (
 			case err instanceof NotValidId:
 				return next(new BadRequestError(GlobalErrorMsg.NotValidId));
 			case err instanceof ReplyNotFound:
-				return next(new NotFound(ReplyErrorMsg.ReplyNotFound));
+				return next(new NotFound(CommentErrorMsg.ReplyNotFound));
 			default:
 				return next(err);
 		}

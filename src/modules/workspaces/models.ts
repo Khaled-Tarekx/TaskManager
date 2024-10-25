@@ -16,7 +16,7 @@ export class MemberSchema {
 	@prop({ ref: () => 'UserSchema', required: true })
 	public user!: Ref<UserSchema>;
 
-	@prop({ enum: Role, default: Role.member })
+	@prop({ type: () => String, enum: Role, default: Role.member })
 	public role!: Role;
 }
 
@@ -31,7 +31,7 @@ export class WorkSpaceSchema {
 	@prop({ ref: () => MemberSchema, required: true })
 	public owner!: Ref<MemberSchema>;
 
-	@prop({ enum: Type, default: Type.other })
+	@prop({ type: () => String, enum: Type, default: Type.other })
 	public type!: Type;
 }
 

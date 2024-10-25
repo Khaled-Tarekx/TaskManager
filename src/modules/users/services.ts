@@ -1,5 +1,5 @@
 import UserModel from './models';
-import { Comment, Reply } from '../comments/models';
+import { Comment } from '../comments/models';
 import Task from '../tasks/models';
 import {
 	findResourceById,
@@ -8,13 +8,11 @@ import {
 } from '../../utills/helpers';
 
 import type { updateUserDTO } from './types';
-import { ReplyNotFound } from '../comments/replies/errors/cause';
-import { CommentNotFound } from '../comments/errors/cause';
+import { CommentNotFound, ReplyNotFound } from '../comments/errors/cause';
 import { TaskNotFound } from '../tasks/errors/cause';
 import { UserDeletionFailed, UserUpdatingFailed } from './errors/cause';
 import { UserNotFound } from '../auth/errors/cause';
 import { supabase } from '../auth/supabase';
-import { User } from '@supabase/supabase-js';
 import { Member } from '../workspaces/models';
 
 export const getUsers = async (user: Express.User) => {
@@ -61,14 +59,14 @@ export const deleteUser = async (user: Express.User) => {
 };
 
 export const getUserReplies = async (user: Express.User) => {
-	return Reply.find({
+	return Comment.find({
 		owner: user.id,
 	});
 };
 
 export const getUserReply = async (replyId: string, user: Express.User) => {
 	validateObjectIds([replyId]);
-	const reply = await Reply.findOne({
+	const reply = await Comment.findOne({
 		_id: replyId,
 		owner: user.id,
 	});

@@ -102,3 +102,135 @@ export const deleteComment = async (
 	await CommentLike.deleteMany({ comment: comment._id });
 	return comment;
 };
+
+import type { createReplyDTO, updateReplyDTO } from './types';
+import {
+	NotSameCommentOrNotFound,
+	ReplyCountUpdateFailed,
+	ReplyCreationFailed,
+	ReplyDeletionFailed,
+	ReplyNotFound,
+	ReplyUpdateFailed,
+} from './errors/cause';
+
+export const getReplies = async (query: Record<string, string>) => {
+	const apiFeatures = new ApiFeatures(
+		Comment.find({ parentReply: { $exists: false } }),
+		query
+	)
+		.sort()
+		.paginate();
+
+	return apiFeatures.mongooseQuery.exec();
+};
+
+export const getCommentReplies = async (commentId: string) => {
+	const apiFeatures = new ApiFeatures(
+		Comment.find({ parent: commentId }).populate({
+			path: 'replies',
+		})
+	)
+		.sort()
+		.paginate();
+	return apiFeatures.mongooseQuery.exec();
+};
+
+export const getReply = async (replyId: string) => {
+	validateObjectIds([replyId]);
+	const reply = await findResourceById(Comment, replyId, ReplyNotFound);
+	const populated_reply = reply.populate({
+		path: 'replies',
+	});
+	return populated_reply;
+};
+
+export const createReply = async (
+	replyData: createReplyDTO,
+	user: Express.User
+) => {
+	const { commentId, parentReply, context } = replyData;
+	let reply;
+	reply = new Comment({
+		parent: commentId,
+		owner: user.id,
+		context,
+	});
+
+	checkResource(reply, ReplyCreationFailed);
+
+	const commentData = await Comment.findByIdAndUpdate(reply.parent?._id, {
+		$inc: { replyCount: 1 },
+	});
+	checkResource(commentData, ReplyCountUpdateFailed);
+	if (parentReply) {
+		const parent = await Comment.findOne({
+			_id: parentReply,
+			comment: commentId,
+		});
+		checkResource(parent, NotSameCommentOrNotFound);
+		parent.replies.push(reply);
+		parent.replyCount++;
+		await parent.save();
+		reply.parent = parent._id;
+	}
+	await reply.save();
+	return reply;
+};
+
+export const editReply = async (
+	replyData: updateReplyDTO,
+	replyId: string,
+	user: Express.User
+) => {
+	const { context } = replyData;
+	validateObjectIds([replyId]);
+	const reply = await findResourceById(Comment, replyId, ReplyNotFound);
+	await isResourceOwner(user.id, reply.owner._id);
+
+	const replyToUpdate = await Comment.findByIdAndUpdate(
+		reply._id,
+		{ context },
+		{ new: true }
+	);
+
+	checkResource(replyToUpdate, ReplyUpdateFailed);
+	return replyToUpdate;
+};
+
+export const deleteReply = async (user: Express.User, replyId: string) => {
+	validateObjectIds([replyId]);
+
+	const reply = await findResourceById(Comment, replyId, ReplyNotFound);
+	await isResourceOwner(user.id, reply.owner._id);
+	const comment = await Comment.findByIdAndUpdate(
+		reply.parent?._id,
+		{
+			$inc: { replyCount: -1 },
+		},
+		{ new: true }
+	);
+
+	checkResource(comment, ReplyCountUpdateFailed);
+
+	const replyToDelete = await reply.deleteOne();
+	if (replyToDelete.deletedCount === 0) {
+		throw new ReplyDeletionFailed();
+	}
+	if (reply.replies && reply.replies.length > 0) {
+		await Comment.deleteMany({
+			_id: { $in: reply.replies },
+		});
+	}
+	if (reply.parent) {
+		await Comment.findByIdAndUpdate(reply.parent, {
+			$pull: { repliesOfReply: reply._id },
+			$inc: { replyCount: -1 },
+		});
+	}
+	if (reply.parent) {
+		await Comment.findByIdAndUpdate(reply.parent, {
+			$inc: { replyCount: -1 },
+		});
+	}
+	return reply;
+};

@@ -9,7 +9,7 @@ export class UserSchema {
 	@prop({ type: () => Boolean })
 	public isLoggedIn?: boolean;
 
-	@prop({ enum: Roles, default: Roles.user })
+	@prop({ type: () => String, enum: Roles, default: Roles.user })
 	public roles?: Roles;
 
 	@prop({ type: () => String, required: true, unique: true, index: true })
@@ -22,8 +22,8 @@ export class UserSchema {
 	})
 	public password?: string;
 
-	@prop({ enum: Position, required: true })
-	public position!: string;
+	@prop({ type: () => String, enum: Position, required: true })
+	public position!: Position;
 }
 
 const UserModel = getModelForClass(UserSchema);

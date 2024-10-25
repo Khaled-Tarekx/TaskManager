@@ -38,22 +38,14 @@ export const authMiddleware = async (
 	if (!decoded) {
 		return next(new TokenVerificationFailed());
 	}
-	try {
-		const user = await findResourceById(
-			UserModel,
-			decoded.user_metadata.id,
-			UserNotFound
-		);
-
+	const user = await UserModel.findById(decoded.user_metadata.id);
+	if (user) {
 		req.user = {
 			...user.toObject(),
 			id: user._id.toString(),
 			supaId: decoded.sub,
 		};
-	} catch (err) {
-		if (err instanceof UserNotFound) {
-			return next(new UserNotFound());
-		}
 	}
+
 	next();
 };

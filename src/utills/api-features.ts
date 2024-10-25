@@ -50,7 +50,7 @@ class ApiFeatures<T> {
 	}
 
 	search(searchableFields: string[]): this {
-		if (this.queryString) {
+		if (this.queryString && this.queryString.search) {
 			const searchValue = this.queryString.search;
 			const searchQuery: Record<string, unknown> = {
 				$or: searchableFields.map((field) => ({
@@ -65,11 +65,9 @@ class ApiFeatures<T> {
 	}
 
 	includeFields(fieldsToReturn: string[]): this {
-		if (this.queryString) {
-			if (this.queryString.fields) {
-				const fields = this.queryString.fields.split(',');
-				this.mongooseQuery = this.mongooseQuery.select(fields);
-			}
+		if (this.queryString && this.queryString.fields) {
+			const fields = this.queryString.fields.split(',');
+			this.mongooseQuery = this.mongooseQuery.select(fields);
 		} else if (fieldsToReturn) {
 			this.mongooseQuery = this.mongooseQuery.select(fieldsToReturn);
 		}

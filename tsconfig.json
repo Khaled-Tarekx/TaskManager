@@ -49,6 +49,7 @@
   "include": [
     "./src/*.ts",
     "./src/**/*",
+    "jest.config.ts",
     "./src/types/global.d.ts",
     ".eslintrc.cjs",
     "."

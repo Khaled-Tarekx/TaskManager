@@ -22,6 +22,7 @@ class LinkExpired extends Error {
 		this.name = 'LinkExpired';
 	}
 }
+
 class ValidationError extends Error {}
 
 export {

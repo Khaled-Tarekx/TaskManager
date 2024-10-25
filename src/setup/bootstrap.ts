@@ -4,7 +4,6 @@ import UserRouter from '../modules/users/routes';
 import AuthRouter from '../modules/auth/routes';
 import TaskRouter from '../modules/tasks/routes';
 import CommentRouter from '../modules/comments/routes';
-import ReplyRouter from '../modules/comments/replies/routes';
 import LikeRouter from '../modules/likes/routes';
 import InvitationRouter from '../modules/invite_link/routes';
 import WorkSpaceRouter from '../modules/workspaces/routes';
@@ -34,8 +33,8 @@ const bootstrap = (app: Application) => {
 	app.use('/api/v1/workspaces', MembersRouter);
 	app.use('/api/v1/tasks', TaskRouter);
 	app.use('/api/v1/comments', CommentRouter);
-	app.use('/api/v1/replies', ReplyRouter);
 	app.use('/api/v1/likes', LikeRouter);
 	app.use(ErrorHandler);
 };
+
 export default bootstrap;
